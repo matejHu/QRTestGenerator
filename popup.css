@@ -23,6 +23,16 @@ input {
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-secondary { font-size: 12px; padding: 8px 10px; }
 
+.btn-secondary-reset {
+  font-size: 12px;
+  font-weight: bold;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #e79d9d;
+  cursor: pointer;
+}
+
 .small { margin-top: 8px; font-size: 12px; opacity: 0.8; }
 .error { margin-top: 10px; color: #b00020; font-size: 12px; }
 
