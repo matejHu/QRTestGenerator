@@ -1,58 +1,84 @@
 # GB QR Chrome Extension
 
-A lightweight Chrome extension for QA/testing that generates QR codes for:
+Chrome extension for QA/testing that generates QR codes for:
 
-- **Experiment mode**: builds URLs with `gbexp` + `gbvar` (0..N-1) and shows a QR for each variant
-- **One-page URL mode**: paste any URL (e.g., preview/branch link) and generate a single QR
+Experiment mode: URLs with gbexp + gbvar (0..N-1) → QR per variant
+
+One-page URL mode: paste any URL (branch preview etc.) → single QR
+
+Right-click mode: generate a QR from any link / selected URL via context menu
 
 ## Features
 
-- DEV / STAGING environment switch
-- Configurable number of variants (generates `gbvar=0..N-1`)
-- Copy URL / Copy all URLs
-- Download QR as PNG
-- Remembers last values via `chrome.storage.local` (unless you reset/clear)
+DEV / STAGING environment switch
+
+Custom variant count (generates gbvar=0..N-1)
+
+Copy URL / Copy all URLs
+
+Download QR as PNG
+
+Saves last values to chrome.storage.local (until Reset)
+
+Right-click any link / selected URL → Generate QR
 
 ## URL Format
 
-Experiment URLs are generated as:
-
 <baseUrl>/?gbexp=<experimentId>&gbvar=<variantId>
 
-## Setup
+## Installation
 
-1. Clone/download this folder.
-2. Make sure the QR library is present locally (Chrome extensions can’t load remote scripts):
-   - `vendor/qrcode.js` (from davidshimjs/qrcodejs)
-3. Open Chrome → `chrome://extensions`
-4. Enable **Developer mode**
-5. Click **Load unpacked**
-6. Select the project folder (must contain `manifest.json`)
+Download/clone this project.
+
+Make sure the QR library is included locally:
+
+vendor/qrcode.js (from davidshimjs/qrcodejs)
+
+Open Chrome and go to chrome://extensions
+
+Enable Developer mode
+
+Click Load unpacked
+
+Select the project folder (it must contain manifest.json)
 
 ## Usage
-
 ### Experiment mode
-1. Enter `gbexp` (experiment id)
-2. Choose **Environment** (DEV/STAGING)
-3. Set **Variants** count (e.g., 3 → generates `gbvar` 0,1,2)
-4. Click **Generate**
+
+Select Experiment
+
+Enter gbexp (experiment id)
+
+Choose Environment (DEV / STAGING)
+
+Set Variants (e.g., 3 → gbvar=0,1,2)
+
+Click Generate
 
 ### One-page URL mode
-1. Switch to **One-page URL**
-2. Paste a full URL (including `https://`)
-3. Click **QR**
+
+Select One-page URL
+
+Paste a full URL (including https://)
+
+Click QR
+
+### Right-click QR (context menu)
+
+On any webpage, right-click a link
+(or select a URL text and right-click)
+
+Choose Generate QR
+
+A new tab opens with the generated QR code
 
 ## Troubleshooting
+### QRCode is not defined
 
-- **“QRCode is not defined”**
-  - Ensure `vendor/qrcode.js` exists
-  - Ensure `popup.html` loads it before `popup.js`:
-    ```html
-    <script src="vendor/qrcode.js"></script>
-    <script src="popup.js"></script>
-    ```
-  - Reload the extension in `chrome://extensions`
+Ensure vendor/qrcode.js exists
 
-## License
+Ensure the script order is correct:
 
-This project uses the `qrcodejs` library (MIT). Include the library’s LICENSE if required by your policy.
+vendor/qrcode.js must load before popup.js
+
+Reload the extension in chrome://extensions
