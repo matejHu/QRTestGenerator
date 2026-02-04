@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "GB Experiment QR",
-  "version": "1.0.0",
-  "description": "Generate QR codes for GrowthBook experiment variants (0/1/2) on staging.",
+  "version": "2.0.0",
+  "description": "Generate QR codes for GrowthBook experiment variants.",
   "action": {
     "default_title": "GB QR",
     "default_popup": "popup.html"
   },
-  "permissions": ["storage"],
+  "permissions": ["storage", "contextMenus", "tabs"],
+  "background": { "service_worker": "background.js" },
   "icons": {
     "128": "icon.png"
   }

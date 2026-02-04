@@ -66,5 +66,14 @@ input {
   justify-content: space-between;
   gap: 8px;
 }
+.select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+}
+
 .qrBox { width: 220px; height: 220px; }
 .qrBox img, .qrBox canvas { width: 220px; height: 220px; }

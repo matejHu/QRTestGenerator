@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QR</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Generated QR</h1>
+      <div id="error" class="error" hidden></div>
+
+      <div class="card">
+        <div class="qr"><div id="qrBox" class="qrBox"></div></div>
+        <div class="url" id="urlText"></div>
+        <div class="actions">
+          <button class="btn btn-secondary" id="copyBtn">Copy URL</button>
+          <button class="btn btn-secondary" id="downloadBtn">Download QR</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="vendor/qrcode.js"></script>
+    <script src="qr.js"></script>
+  </body>
+</html>
