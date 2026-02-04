@@ -77,3 +77,24 @@ input {
 
 .qrBox { width: 220px; height: 220px; }
 .qrBox img, .qrBox canvas { width: 220px; height: 220px; }
+
+.modeRow {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+
+.modeBtn {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.modeBtnActive {
+  border-color: #bbb;
+  font-weight: 600;
+}

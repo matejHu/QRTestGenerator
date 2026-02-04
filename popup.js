@@ -21,6 +21,13 @@ const els = {
   baseUrlText: document.getElementById("baseUrlText"),
   urlInput: document.getElementById("urlInput"),
   genUrl: document.getElementById("genUrl"),
+
+  // mode switch
+  modeExp: document.getElementById("modeExp"),
+  modeUrl: document.getElementById("modeUrl"),
+  sectionExp: document.getElementById("sectionExp"),
+  sectionUrl: document.getElementById("sectionUrl"),
+  errorUrl: document.getElementById("errorUrl"),
 };
 
 function getBaseUrl() {
@@ -57,10 +64,46 @@ function showError(msg) {
   els.error.textContent = msg || "";
 }
 
+function showErrorUrl(msg) {
+  if (!els.errorUrl) return;
+  els.errorUrl.hidden = !msg;
+  els.errorUrl.textContent = msg || "";
+}
+
+function setMode(mode) {
+  const isExp = mode === "exp";
+
+  if (els.sectionExp) els.sectionExp.hidden = !isExp;
+  if (els.sectionUrl) els.sectionUrl.hidden = isExp;
+
+  if (els.modeExp) els.modeExp.classList.toggle("modeBtnActive", isExp);
+  if (els.modeUrl) els.modeUrl.classList.toggle("modeBtnActive", !isExp);
+
+  // Clear errors so you don't see stale messages when switching modes
+  showError("");
+  showErrorUrl("");
+
+  // Button label matches current mode
+  els.copyAll.textContent = isExp ? "Copy all URLs" : "Copy URL";
+}
+
+async function saveMode(mode) {
+  await chrome.storage.local.set({ mode });
+}
+
+async function loadMode() {
+  const data = await chrome.storage.local.get(["mode"]);
+  const mode = data.mode === "url" ? "url" : "exp";
+  setMode(mode);
+}
+
 function clearGrid() {
   els.grid.innerHTML = "";
   els.copyAll.disabled = true;
   els.copyAll.onclick = null;
+
+  const isExp = !els.sectionExp?.hidden;
+  els.copyAll.textContent = isExp ? "Copy all URLs" : "Copy URL";
 }
 
 async function copyText(text) {
@@ -85,7 +128,6 @@ function downloadDataUrl(dataUrl, filename) {
 }
 
 function variantLabel(i) {
-  // Nice labels for the first few, then generic
   if (i === 0) return "Control (0)";
   if (i === 1) return "A (1)";
   if (i === 2) return "B (2)";
@@ -95,6 +137,7 @@ function variantLabel(i) {
 function renderCards({ exp, envKey, variantCount }) {
   clearGrid();
   showError("");
+  showErrorUrl("");
 
   if (typeof QRCode === "undefined") {
     showError(
@@ -125,14 +168,12 @@ function renderCards({ exp, envKey, variantCount }) {
     const qrWrap = document.createElement("div");
     qrWrap.className = "qr";
 
-    // qrcodejs wants a container element; it will insert canvas/img into it.
     const qrBox = document.createElement("div");
     qrBox.className = "qrBox";
     qrWrap.appendChild(qrBox);
 
     try {
       qrBox.innerHTML = "";
-      // eslint-disable-next-line no-undef
       new QRCode(qrBox, {
         text: url,
         width: DEFAULTS.qrSize,
@@ -181,6 +222,7 @@ function renderCards({ exp, envKey, variantCount }) {
   }
 
   els.copyAll.disabled = false;
+  els.copyAll.textContent = "Copy all URLs";
   els.copyAll.onclick = async () => {
     await copyText(urls.join("\n"));
   };
@@ -191,17 +233,20 @@ async function saveState(state) {
 }
 
 async function loadState() {
-  const data = await chrome.storage.local.get(["gbexp", "env", "variantCount"]);
+  const data = await chrome.storage.local.get([
+    "gbexp",
+    "env",
+    "variantCount",
+    "lastUrl",
+  ]);
 
-  // gbexp
   if (data.gbexp) els.gbexp.value = String(data.gbexp);
-
-  // env
   els.env.value = data.env === "dev" ? "dev" : DEFAULTS.env;
 
-  // variants
   const vc = parseVariantCount(data.variantCount ?? DEFAULTS.variantCount);
   els.variantCount.value = String(vc ?? DEFAULTS.variantCount);
+
+  if (data.lastUrl && els.urlInput) els.urlInput.value = String(data.lastUrl);
 
   updateBaseUrlLabel();
 
@@ -217,7 +262,6 @@ function normalizeUrl(text) {
   const t = String(text || "").trim();
   if (!t) return null;
 
-  // If user pastes without protocol, try https://
   try {
     return new URL(t).toString();
   } catch {
@@ -232,9 +276,10 @@ function normalizeUrl(text) {
 function renderSingleUrlCard(url) {
   clearGrid();
   showError("");
+  showErrorUrl("");
 
   if (typeof QRCode === "undefined") {
-    showError("QRCode is not defined. Check vendor/qrcode.js is loaded before popup.js.");
+    showErrorUrl("QRCode is not defined. Check vendor/qrcode.js is loaded before popup.js.");
     return;
   }
 
@@ -264,7 +309,7 @@ function renderSingleUrlCard(url) {
       correctLevel: QRCode.CorrectLevel.M,
     });
   } catch (err) {
-    showError("QR generation failed: " + (err?.message || String(err)));
+    showErrorUrl("QR generation failed: " + (err?.message || String(err)));
   }
 
   const urlEl = document.createElement("div");
@@ -287,7 +332,7 @@ function renderSingleUrlCard(url) {
   dlBtn.addEventListener("click", () => {
     const dataUrl = getQrDataUrl(qrBox);
     if (!dataUrl) {
-      showError("Could not extract QR image for download.");
+      showErrorUrl("Could not extract QR image for download.");
       return;
     }
     downloadDataUrl(dataUrl, `qr.png`);
@@ -303,17 +348,32 @@ function renderSingleUrlCard(url) {
 
   els.grid.appendChild(card);
 
-  // CopyAll becomes "Copy URL" for this mode
   els.copyAll.disabled = false;
   els.copyAll.textContent = "Copy URL";
   els.copyAll.onclick = async () => copyText(url);
 }
 
+// Mode buttons
+els.modeExp?.addEventListener("click", async () => {
+  setMode("exp");
+  await saveMode("exp");
+});
+
+els.modeUrl?.addEventListener("click", async () => {
+  setMode("url");
+  await saveMode("url");
+});
+
+// Env dropdown
 els.env.addEventListener("change", () => {
   updateBaseUrlLabel();
 });
 
+// Experiment generate
 els.gen.addEventListener("click", async () => {
+  setMode("exp");
+  await saveMode("exp");
+
   const exp = String(els.gbexp.value || "").trim();
   if (!isValidExp(exp)) {
     showError("Please enter a numeric gbexp (experiment id).");
@@ -339,25 +399,33 @@ els.gbexp.addEventListener("keydown", (e) => {
   if (e.key === "Enter") els.gen.click();
 });
 
+// Reset
 els.reset.addEventListener("click", async () => {
-  await chrome.storage.local.remove(["gbexp", "env", "variantCount"]);
+  await chrome.storage.local.remove(["gbexp", "env", "variantCount", "lastUrl", "mode"]);
   els.gbexp.value = "";
   els.env.value = DEFAULTS.env;
   els.variantCount.value = String(DEFAULTS.variantCount);
+  if (els.urlInput) els.urlInput.value = "";
+
   updateBaseUrlLabel();
   clearGrid();
   showError("");
+  showErrorUrl("");
+  setMode("exp");
 });
 
+// One-page URL generate
 els.genUrl.addEventListener("click", async () => {
+  setMode("url");
+  await saveMode("url");
+
   const url = normalizeUrl(els.urlInput.value);
   if (!url) {
-    showError("Please paste a valid URL.");
+    showErrorUrl("Please paste a valid URL.");
     clearGrid();
     return;
   }
 
-  // Save last pasted URL (optional)
   await chrome.storage.local.set({ lastUrl: url });
 
   renderSingleUrlCard(url);
@@ -367,5 +435,7 @@ els.urlInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") els.genUrl.click();
 });
 
+// Init
 updateBaseUrlLabel();
+loadMode();
 loadState();
