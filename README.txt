@@ -19,12 +19,6 @@ Experiment URLs are generated as:
 
 <baseUrl>/?gbexp=<experimentId>&gbvar=<variantId>
 
-
-Example:
-
-https://onboarding-staging-fitify.vercel.app/?gbexp=202603&gbvar=1
-
-
 ## Setup
 
 1. Clone/download this folder.
