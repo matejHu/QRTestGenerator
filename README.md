@@ -10,7 +10,7 @@ Chrome extension for QA/testing that generates QR codes for:
 
 ## Features
 
-- DEV / STAGING / CUSTOM environment switch
+- DEV / STAGING environment switch
 - Custom variant count (generates `gbvar=0..N-1`)
 - Copy URL / Copy all URLs
 - Download QR as PNG
@@ -45,7 +45,7 @@ Chrome extension for QA/testing that generates QR codes for:
 
 1. Select **Experiment**
 2. Enter `gbexp` (experiment id)
-3. Choose **Environment** (DEV / STAGING / CUSTOM)
+3. Choose **Environment** (DEV / STAGING)
 4. Set **Variants** (e.g., 3 → `gbvar=0,1,2`)
 5. Click **Generate**
 
