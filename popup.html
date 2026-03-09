@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GB QR</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>GB QR</h1>
+
+<div class="modeRow">
+  <button id="modeExp" class="modeBtn modeBtnActive" type="button">Experiment</button>
+  <button id="modeUrl" class="modeBtn" type="button">One-page URL</button>
+  <button id="reset" class="btn btn-secondary-reset">RESET</button>
+</div>
+
+<div id="sectionExp">
+  <label class="label" for="gbexp">gbexp (experiment)</label>
+  <div class="row">
+    <input id="gbexp" inputmode="numeric" placeholder="202603" />
+    <button id="gen" class="btn">Generate</button>
+  </div>
+
+  <div class="row" style="margin-top: 10px;">
+    <div style="flex: 1;">
+      <label class="label" for="env">Environment</label>
+      <select id="env" class="select">
+        <option value="staging">Staging</option>
+        <option value="dev">Dev</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+
+    <div style="width: 140px;">
+      <label class="label" for="variantCount">Variants</label>
+      <input id="variantCount" inputmode="numeric" placeholder="3" />
+    </div>
+  </div>
+
+  <div id="customUrlRow" hidden style="margin-top: 8px;">
+    <label class="label" for="customUrl">Custom base URL</label>
+    <input id="customUrl" placeholder="https://..." />
+  </div>
+
+  <div class="small" style="margin-top: 8px;">
+    Base URL: <span id="baseUrlText"></span>
+  </div>
+
+  <div id="error" class="error" hidden></div>
+</div>
+
+<div id="sectionUrl" hidden>
+  <div id="errorUrl" class="error" hidden></div>
+
+  <label class="label" for="urlInput">Paste URL (branch preview etc.)</label>
+  <div class="row">
+    <input id="urlInput" placeholder="https://..." />
+    <button id="genUrl" class="btn">QR</button>
+  </div>
+
+  <div class="small" style="margin-top: 6px; opacity: 0.75;">
+    Tip: Right-click any link → “Generate QR”
+  </div>
+</div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="footer">
+      <button id="copyAll" class="btn btn-secondary" disabled>Copy all URLs</button>
+    </div>
+  </div>
+
+  <script src="vendor/qrcode.js"></script>
+  <script src="popup.js"></script>
+</body>
+
+</html>
