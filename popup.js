@@ -44,8 +44,7 @@ function updateBaseUrlLabel() {
 
 function buildUrl(baseUrl, gbexp, gbvar) {
   const u = new URL(baseUrl);
-  u.searchParams.set("gbexp", String(gbexp));
-  u.searchParams.set("gbvar", String(gbvar));
+  u.searchParams.set("gbexp", `${gbexp}:${gbvar}`);
   return u.toString();
 }
 
