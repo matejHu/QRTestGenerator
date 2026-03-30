@@ -10,60 +10,91 @@
 
 <body>
   <div class="wrap">
-    <h1>GB QR</h1>
+    <div class="header">
+      <h1>GB QR</h1>
+      <button id="reset" class="btn btn-reset-small">RESET</button>
+    </div>
 
 <div class="modeRow">
   <button id="modeExp" class="modeBtn modeBtnActive" type="button">Experiment</button>
+  <button id="multiExpBtn" class="modeBtn" type="button">Multiple</button>
   <button id="modeUrl" class="modeBtn" type="button">One-page URL</button>
-  <button id="reset" class="btn btn-secondary-reset">RESET</button>
 </div>
 
-<div id="sectionExp">
-  <div style="margin-top: 10px;">
-    <label class="label" for="env">Environment</label>
-    <select id="env" class="select">
-      <option value="staging">Staging</option>
-      <option value="dev">Dev</option>
-      <option value="custom">Custom</option>
-    </select>
-  </div>
+  <div id="sectionExp">
+    <div style="margin-top: 10px;">
+      <label class="label" for="env">Environment</label>
+      <select id="env" class="select">
+        <option value="staging">Staging</option>
+        <option value="dev">Dev</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
 
-  <div id="customUrlRow" hidden style="margin-top: 8px;">
-    <label class="label" for="customUrl">Custom base URL</label>
-    <input id="customUrl" placeholder="https://..." />
-  </div>
+    <div id="customUrlRow" hidden style="margin-top: 8px;">
+      <label class="label" for="customUrl">Custom base URL</label>
+      <input id="customUrl" placeholder="https://..." />
+    </div>
 
-  <div class="small" style="margin-top: 8px;">
-    Base URL: <span id="baseUrlText"></span>
-  </div>
+    <div class="small" style="margin-top: 8px; margin-bottom: 8px;">
+      Base URL: <span id="baseUrlText"></span>
+    </div>
 
-  <div style="margin-top: 10px;">
-    <label class="checkboxLabel">
-      <input type="checkbox" id="multipleExperiments" />
-      Multiple experiments
-    </label>
-  </div>
+    <div style="margin-top: 10px;">
+      <label class="label" for="localization">Localization</label>
+      <select id="localization" class="select">
+        <option value="">None</option>
+        <option value="en">English (en)</option>
+        <option value="cs">Czech (cs)</option>
+        <option value="nl">Dutch (nl)</option>
+        <option value="fr">French (fr)</option>
+        <option value="de">German (de)</option>
+        <option value="hu">Hungarian (hu)</option>
+        <option value="it">Italian (it)</option>
+        <option value="ja">Japanese (ja)</option>
+        <option value="ko">Korean (ko)</option>
+        <option value="pl">Polish (pl)</option>
+        <option value="pt">Portuguese (pt)</option>
+        <option value="ru">Russian (ru)</option>
+        <option value="sk">Slovak (sk)</option>
+        <option value="es">Spanish (es)</option>
+        <option value="tr">Turkish (tr)</option>
+      </select>
+    </div>
 
-  <div id="singleExpMode">
-    <div class="experimentField">
-      <label class="label" style="margin-bottom: 6px;">Experiment</label>
-      <div class="row" style="margin-bottom: 0;">
-        <input id="gbexp" inputmode="numeric" placeholder="AB test id" style="flex: 2;" />
-        <input id="variantCount" inputmode="numeric" placeholder="No. of variants" style="flex: 1; max-width: 100px;" />
+    <div style="margin-top: 8px;">
+      <label class="label">Flags</label>
+      <div class="checkboxRow">
+        <label class="checkboxLabel">
+          <input type="checkbox" id="flagF01" />
+          /f01/
+        </label>
+        <label class="checkboxLabel">
+          <input type="checkbox" id="flagM01" />
+          /m01/
+        </label>
       </div>
     </div>
-    <button id="gen" class="btn" style="width: 100%; margin-top: 10px;">Generate</button>
-  </div>
 
-  <div id="multipleExpMode" hidden>
-    <div id="experimentsContainer"></div>
-    <button id="addExperiment" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">+ Add Experiment</button>
-    <button id="genMultiple" class="btn" style="width: 100%; margin-top: 10px;">Generate QR</button>
-    <button id="goToPageMultiple" class="btn btn-secondary" style="width: 100%; margin-top: 8px;" disabled>Go to page</button>
-  </div>
+    <div id="expMode">
+      <div class="experimentField">
+        <label class="label" style="margin-bottom: 6px;">Experiment</label>
+        <div class="row" style="margin-bottom: 0;">
+          <input id="gbexp" inputmode="numeric" placeholder="AB test id" style="flex: 2;" />
+          <input id="variantCount" inputmode="numeric" placeholder="No. of variants" style="flex: 1; max-width: 100px;" />
+        </div>
+      </div>
+      <button id="gen" class="btn" style="width: 100%; margin-top: 10px;">Generate</button>
+    </div>
 
-  <div id="error" class="error" hidden></div>
-</div>
+    <div id="multipleExpMode" hidden>
+      <div id="experimentsContainer"></div>
+      <button id="addExperiment" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">+ Add Experiment</button>
+      <button id="genMultiple" class="btn" style="width: 100%; margin-top: 10px;">Generate QR</button>
+    </div>
+
+    <div id="error" class="error" hidden></div>
+  </div>
 
 <div id="sectionUrl" hidden>
   <div id="errorUrl" class="error" hidden></div>
@@ -89,6 +120,7 @@
   </div>
 
   <script src="vendor/qrcode.js"></script>
+  <script src="config.js"></script>
   <script src="popup.js"></script>
 </body>
 
