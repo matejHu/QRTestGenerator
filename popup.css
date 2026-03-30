@@ -19,9 +19,30 @@ input {
   background: #fff;
   cursor: pointer;
   font-size: 13px;
+  transition: background 0.05s ease, transform 0.05s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-secondary { font-size: 12px; padding: 8px 10px; }
+.btn:active {
+  background: #e8e8e8;
+  transform: scale(0.98);
+}
+.btn:focus {
+  outline: none;
+}
+.btn:disabled { 
+  opacity: 0.5; 
+  cursor: not-allowed;
+  transform: none;
+}
+.btn:disabled:active {
+  background: #fff;
+  transform: none;
+}
+.btn-secondary { 
+  font-size: 12px; 
+  padding: 8px 10px;
+}
 
 .btn-secondary-reset {
   font-size: 12px;
@@ -31,6 +52,16 @@ input {
   border-radius: 10px;
   background: #e79d9d;
   cursor: pointer;
+  transition: background 0.05s ease, transform 0.05s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-secondary-reset:active {
+  background: #d88888;
+  transform: scale(0.98);
+}
+.btn-secondary-reset:focus {
+  outline: none;
 }
 
 .small { margin-top: 8px; font-size: 12px; opacity: 0.8; }
@@ -78,11 +109,15 @@ input {
 }
 .select {
   width: 100%;
-  padding: 10px;
+  padding: 10px 28px 10px 10px;
   border: 1px solid #ddd;
   border-radius: 10px;
   background: #fff;
   font-size: 14px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%23333' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
 }
 
 .qrBox { width: 220px; height: 220px; }
@@ -102,9 +137,75 @@ input {
   background: #fff;
   cursor: pointer;
   font-size: 13px;
+  transition: background 0.05s ease, transform 0.05s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.modeBtn:active {
+  background: #e8e8e8;
+  transform: scale(0.98);
+}
+.modeBtn:focus {
+  outline: none;
 }
 
 .modeBtnActive {
-  border-color: #bbb;
-  font-weight: 600;
+  background: #007aff;
+  color: #fff;
+  border-color: #007aff;
+}
+.modeBtnActive:active {
+  background: #0066dd;
+  transform: scale(0.98);
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  flex: none;
+  width: auto;
+  cursor: pointer;
+}
+
+.experimentField {
+  padding: 10px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  background: #fafafa;
+}
+
+.removeExpBtn {
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c62828;
+  padding: 0;
+  transition: background 0.05s ease, transform 0.05s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.removeExpBtn:hover {
+  background: #ffcdd2;
+}
+.removeExpBtn:active {
+  background: #ffb3ba;
+  transform: scale(0.95);
+}
+.removeExpBtn:focus {
+  outline: none;
 }
