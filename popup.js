@@ -1,9 +1,3 @@
-const URLS = {
-  dev: "https://onboarding-dev-fitify.vercel.app/",
-  staging: "https://onboarding-staging-fitify.vercel.app/",
-  custom: ""
-};
-
 const DEFAULTS = {
   env: "staging",
   variantCount: 3,
@@ -26,24 +20,27 @@ const els = {
   genUrl: document.getElementById("genUrl"),
   customUrl: document.getElementById("customUrl"),
   customUrlRow: document.getElementById("customUrlRow"),
+  localization: document.getElementById("localization"),
+  flagF01: document.getElementById("flagF01"),
+  flagM01: document.getElementById("flagM01"),
+  flagWelcome: document.getElementById("flagWelcome"),
 
-  // mode switch
+  // mode buttons
   modeExp: document.getElementById("modeExp"),
+  multiExpBtn: document.getElementById("multiExpBtn"),
   modeUrl: document.getElementById("modeUrl"),
   sectionExp: document.getElementById("sectionExp"),
   sectionUrl: document.getElementById("sectionUrl"),
   errorUrl: document.getElementById("errorUrl"),
 
-  // multiple experiments
-  multipleExperiments: document.getElementById("multipleExperiments"),
-  singleExpMode: document.getElementById("singleExpMode"),
+  // single vs multiple experiment views
+  expMode: document.getElementById("expMode"),
   multipleExpMode: document.getElementById("multipleExpMode"),
   experimentsContainer: document.getElementById("experimentsContainer"),
   addExperiment: document.getElementById("addExperiment"),
   genMultiple: document.getElementById("genMultiple"),
 
-  // go to page buttons
-  goToPageMultiple: document.getElementById("goToPageMultiple"),
+  // go to page button (URL mode only)
   goToPageUrl: document.getElementById("goToPageUrl"),
 };
 
@@ -51,6 +48,7 @@ let experimentFields = [];
 let lastGeneratedUrlMultiple = null;
 let lastGeneratedUrlSingle = null;
 let modeSetByUser = false;
+let currentMode = "exp";
 
 function getBaseUrl() {
   if (els.env.value === "custom") return els.customUrl?.value.trim() || "";
@@ -61,8 +59,23 @@ function updateBaseUrlLabel() {
   els.baseUrlText.textContent = getBaseUrl();
 }
 
+function buildPathSegments() {
+  const segments = [];
+  const locale = els.localization?.value;
+  if (locale) segments.push(locale);
+  if (els.flagF01?.checked) segments.push("f01");
+  if (els.flagM01?.checked) segments.push("m01");
+  if (els.flagWelcome?.checked) segments.push("welcome");
+  return segments;
+}
+
 function buildUrl(baseUrl, gbexp, gbvar) {
   const u = new URL(baseUrl);
+  const segments = buildPathSegments();
+  if (segments.length > 0) {
+    const base = u.pathname.endsWith("/") ? u.pathname : u.pathname + "/";
+    u.pathname = base + segments.join("/") + "/";
+  }
   u.searchParams.delete("gbvar");
   u.searchParams.set("gbexp", `${gbexp}:${gbvar}`);
   return u.toString();
@@ -70,6 +83,11 @@ function buildUrl(baseUrl, gbexp, gbvar) {
 
 function buildMultiExperimentUrl(baseUrl, experiments) {
   const u = new URL(baseUrl);
+  const segments = buildPathSegments();
+  if (segments.length > 0) {
+    const base = u.pathname.endsWith("/") ? u.pathname : u.pathname + "/";
+    u.pathname = base + segments.join("/") + "/";
+  }
   u.searchParams.delete("gbexp");
   u.searchParams.delete("gbvar");
   // Multi-experiment format: ?gbexp=exp1:var1,exp2:var2
@@ -104,29 +122,6 @@ function showErrorUrl(msg) {
   els.errorUrl.textContent = msg || "";
 }
 
-// Validate and update "Go to page" button for multiple experiments mode
-function validateMultipleExperiments() {
-  try {
-    const baseUrl = getBaseUrl();
-    if (!baseUrl) {
-      els.goToPageMultiple.disabled = true;
-      return;
-    }
-
-    const experiments = collectExperimentData();
-    if (experiments.length === 0) {
-      els.goToPageMultiple.disabled = true;
-      return;
-    }
-
-    const url = buildMultiExperimentUrl(baseUrl, experiments);
-    lastGeneratedUrlMultiple = url;
-    els.goToPageMultiple.disabled = false;
-  } catch (err) {
-    els.goToPageMultiple.disabled = true;
-  }
-}
-
 // Validate and update "Go to page" button for URL mode
 function validateUrlMode() {
   const url = normalizeUrl(els.urlInput.value);
@@ -138,39 +133,25 @@ function validateUrlMode() {
   }
 }
 
-function toggleMultipleExperiments() {
-  const isMultiple = els.multipleExperiments.checked;
-  els.singleExpMode.hidden = isMultiple;
-  els.multipleExpMode.hidden = !isMultiple;
-  
-  if (isMultiple) {
-    const existingGbexp = els.gbexp.value.trim();
-
-    // Disable the variants field in single mode
-    els.variantCount.disabled = true;
-    
-    // Only clear and create new fields if switching manually (not during load)
-    if (experimentFields.length === 0) {
-      // Retain gbexp value if filled, otherwise start fresh
-      addExperimentField(existingGbexp);
-      addExperimentField();
-    } else if (existingGbexp) {
-      // If fields already exist, backfill the first gbexp only when it is empty.
-      const firstGbexpInput = experimentFields[0]?.querySelector('[data-field="gbexp"]');
-      if (firstGbexpInput && !firstGbexpInput.value.trim()) {
-        firstGbexpInput.value = existingGbexp;
-      }
-    }
-    
-    validateMultipleExperiments();
-    saveExperimentFieldsState();
-  } else {
-    // Enable the variants field in single mode
-    els.variantCount.disabled = false;
+function validateMultipleExperiments() {
+  try {
+    const baseUrl = getBaseUrl();
+    if (!baseUrl) return;
+    const experiments = collectExperimentData();
+    if (experiments.length === 0) return;
+    lastGeneratedUrlMultiple = buildMultiExperimentUrl(baseUrl, experiments);
+  } catch (err) {
+    // ignore validation errors
   }
-  
-  showError("");
-  saveMultipleExperimentsState(isMultiple);
+}
+
+function ensureExperimentFields() {
+  if (experimentFields.length === 0) {
+    const existingGbexp = els.gbexp?.value.trim() || "";
+    addExperimentField(existingGbexp);
+    addExperimentField();
+  }
+  validateMultipleExperiments();
 }
 
 function addExperimentField(prefillGbexp = "") {
@@ -183,7 +164,7 @@ function addExperimentField(prefillGbexp = "") {
   const fieldDiv = document.createElement("div");
   fieldDiv.className = "experimentField";
   fieldDiv.dataset.index = index;
-  
+
   fieldDiv.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
       <label class="label" style="margin: 0;">Experiment ${index + 1}</label>
@@ -203,21 +184,20 @@ function addExperimentField(prefillGbexp = "") {
     removeBtn.onclick = () => removeExperimentField(index);
   }
 
-  // Add input listeners to validate on change
   const gbexpInput = fieldDiv.querySelector('[data-field="gbexp"]');
   const gbvarInput = fieldDiv.querySelector('[data-field="gbvar"]');
 
   if (gbexpInput && prefillGbexp) {
     gbexpInput.value = prefillGbexp;
   }
-  
+
   if (gbexpInput) {
     gbexpInput.addEventListener("input", () => {
       validateMultipleExperiments();
       saveExperimentFieldsState();
     });
   }
-  
+
   if (gbvarInput) {
     gbvarInput.addEventListener("input", () => {
       validateMultipleExperiments();
@@ -234,14 +214,14 @@ function removeExperimentField(index) {
   if (field) {
     field.remove();
     experimentFields = experimentFields.filter(f => f.dataset.index != index);
-    
+
     experimentFields.forEach((f, i) => {
       f.dataset.index = i;
       const label = f.querySelector("label");
       if (label) label.textContent = `Experiment ${i + 1}`;
     });
   }
-  
+
   updateAddButtonState();
   showError("");
   validateMultipleExperiments();
@@ -255,18 +235,18 @@ function updateAddButtonState() {
 function collectExperimentData() {
   const experiments = [];
   const seenGbexp = new Set();
-  
+
   for (const field of experimentFields) {
     const gbexpInput = field.querySelector('[data-field="gbexp"]');
     const gbvarInput = field.querySelector('[data-field="gbvar"]');
-    
+
     const gbexp = gbexpInput.value.trim();
     const gbvar = gbvarInput.value.trim();
-    
+
     if (!gbexp || !gbvar) {
       throw new Error("All experiment fields must be filled");
     }
-    
+
     if (!isValidExp(gbexp)) {
       throw new Error(`Invalid gbexp: ${gbexp}`);
     }
@@ -275,14 +255,14 @@ function collectExperimentData() {
       throw new Error(`Duplicate gbexp is not allowed: ${gbexp}`);
     }
     seenGbexp.add(gbexp);
-    
+
     if (!isValidExp(gbvar)) {
       throw new Error(`Invalid gbvar: ${gbvar}`);
     }
-    
+
     experiments.push({ gbexp, gbvar });
   }
-  
+
   return experiments;
 }
 
@@ -298,7 +278,7 @@ async function handleMultipleExperiments() {
     }
 
     const experiments = collectExperimentData();
-    
+
     if (experiments.length === 0) {
       showError("Please add at least one experiment");
       return;
@@ -306,14 +286,13 @@ async function handleMultipleExperiments() {
 
     const url = buildMultiExperimentUrl(baseUrl, experiments);
     lastGeneratedUrlMultiple = url;
-    els.goToPageMultiple.disabled = false;
-    
+
     const card = document.createElement("div");
     card.className = "card";
 
     const header = document.createElement("div");
     header.className = "cardHeader";
-    
+
     const title = document.createElement("div");
     title.innerHTML = `<strong>Multiple Experiments</strong> <span class="badge">${experiments.length} exp</span>`;
     header.appendChild(title);
@@ -330,7 +309,7 @@ async function handleMultipleExperiments() {
 
     const qrWrap = document.createElement("div");
     qrWrap.className = "qr";
-    
+
     const qrBox = document.createElement("div");
     qrBox.className = "qrBox";
     qrWrap.appendChild(qrBox);
@@ -366,8 +345,16 @@ async function handleMultipleExperiments() {
       }
     };
 
+    const goToPageBtn = document.createElement("button");
+    goToPageBtn.className = "btn btn-secondary";
+    goToPageBtn.textContent = "Go to page";
+    goToPageBtn.addEventListener("click", () => {
+      chrome.windows.create({ url, incognito: true });
+    });
+
     actions.appendChild(copyBtn);
     actions.appendChild(downloadBtn);
+    actions.appendChild(goToPageBtn);
 
     card.appendChild(header);
     card.appendChild(details);
@@ -391,20 +378,25 @@ async function handleMultipleExperiments() {
 }
 
 function setMode(mode) {
+  currentMode = mode;
   const isExp = mode === "exp";
+  const isMultiple = mode === "multiple";
+  const isUrl = mode === "url";
 
-  if (els.sectionExp) els.sectionExp.hidden = !isExp;
-  if (els.sectionUrl) els.sectionUrl.hidden = isExp;
+  if (els.sectionExp) els.sectionExp.hidden = isUrl;
+  if (els.sectionUrl) els.sectionUrl.hidden = !isUrl;
+  if (els.expMode) els.expMode.hidden = !isExp;
+  if (els.multipleExpMode) els.multipleExpMode.hidden = !isMultiple;
 
   if (els.modeExp) els.modeExp.classList.toggle("modeBtnActive", isExp);
-  if (els.modeUrl) els.modeUrl.classList.toggle("modeBtnActive", !isExp);
+  if (els.multiExpBtn) els.multiExpBtn.classList.toggle("modeBtnActive", isMultiple);
+  if (els.modeUrl) els.modeUrl.classList.toggle("modeBtnActive", isUrl);
 
-  // Clear errors so you don't see stale messages when switching modes
   showError("");
   showErrorUrl("");
 
-  // Button label matches current mode
   els.copyAll.textContent = isExp ? "Copy all URLs" : "Copy URL";
+  els.copyAll.hidden = isMultiple || isUrl;
 }
 
 async function saveMode(mode) {
@@ -414,7 +406,7 @@ async function saveMode(mode) {
 async function loadMode() {
   const data = await chrome.storage.local.get(["mode"]);
   if (modeSetByUser) return;
-  const mode = data.mode === "url" ? "url" : "exp";
+  const mode = ["exp", "multiple", "url"].includes(data.mode) ? data.mode : "exp";
   setMode(mode);
 }
 
@@ -422,9 +414,7 @@ function clearGrid() {
   els.grid.innerHTML = "";
   els.copyAll.disabled = true;
   els.copyAll.onclick = null;
-
-  const isExp = !els.sectionExp?.hidden;
-  els.copyAll.textContent = isExp ? "Copy all URLs" : "Copy URL";
+  els.copyAll.textContent = currentMode === "exp" ? "Copy all URLs" : "Copy URL";
 }
 
 async function copyText(text) {
@@ -535,7 +525,7 @@ function renderCards({ exp, envKey, variantCount }) {
     goToPageBtn.className = "btn btn-secondary";
     goToPageBtn.textContent = "Go to page";
     goToPageBtn.addEventListener("click", () => {
-      window.open(url, "_blank");
+      chrome.windows.create({ url, incognito: true });
     });
 
     actions.appendChild(copyBtn);
@@ -562,7 +552,7 @@ async function saveState(state) {
 }
 
 function persistSingleModeInputs() {
-  if (els.multipleExperiments?.checked) return;
+  if (currentMode === "multiple") return;
   chrome.storage.local.set({
     gbexp: String(els.gbexp?.value || "").trim(),
     variantCount: String(els.variantCount?.value || "").trim(),
@@ -578,7 +568,10 @@ async function loadState() {
       "lastUrl",
       "mode",
       "customUrl",
-      "multipleExperiments",
+      "localization",
+      "flagF01",
+      "flagM01",
+      "flagWelcome",
       "experimentFields",
     ]);
 
@@ -586,6 +579,10 @@ async function loadState() {
     els.env.value = ["dev", "staging", "custom"].includes(data.env) ? data.env : DEFAULTS.env;
     if (els.customUrl && data.customUrl) els.customUrl.value = String(data.customUrl);
     if (els.customUrlRow) els.customUrlRow.hidden = els.env.value !== "custom";
+    if (els.localization && data.localization) els.localization.value = String(data.localization);
+    if (els.flagF01 && data.flagF01) els.flagF01.checked = Boolean(data.flagF01);
+    if (els.flagM01 && data.flagM01) els.flagM01.checked = Boolean(data.flagM01);
+    if (els.flagWelcome && data.flagWelcome) els.flagWelcome.checked = Boolean(data.flagWelcome);
 
     const hasSavedVariantCount =
       data.variantCount !== undefined && data.variantCount !== null && String(data.variantCount).trim() !== "";
@@ -594,14 +591,8 @@ async function loadState() {
 
     if (data.lastUrl && els.urlInput) els.urlInput.value = String(data.lastUrl);
 
-  // Restore multiple experiments state
-    if (data.multipleExperiments) {
-      els.multipleExperiments.checked = true;
-      els.singleExpMode.hidden = true;
-      els.multipleExpMode.hidden = false;
-      els.variantCount.disabled = true;
-    
-    // Restore experiment fields
+    // Restore experiment fields for multiple mode
+    if (data.mode === "multiple") {
       if (data.experimentFields && Array.isArray(data.experimentFields) && data.experimentFields.length > 0) {
         experimentFields = [];
         els.experimentsContainer.innerHTML = "";
@@ -616,15 +607,11 @@ async function loadState() {
         });
         validateMultipleExperiments();
       } else {
-        // No saved fields, start with 2 empty fields
         experimentFields = [];
         els.experimentsContainer.innerHTML = "";
         addExperimentField();
         addExperimentField();
       }
-    } else {
-      // Not in multiple experiments mode, ensure variants field is enabled
-      els.variantCount.disabled = false;
     }
 
     updateBaseUrlLabel();
@@ -638,10 +625,10 @@ async function loadState() {
       }
     }
 
-  // auto-render if we have a valid exp and NOT in multiple experiments mode
+    // Auto-render if we have a valid exp in single experiment mode
     if (
       data.mode !== "url" &&
-      !els.multipleExperiments.checked &&
+      data.mode !== "multiple" &&
       els.grid.children.length === 0
     ) {
       const exp = String(els.gbexp.value || "").trim();
@@ -654,10 +641,6 @@ async function loadState() {
     console.error("Failed to restore popup state:", err);
     showError("Could not restore previous state. You can continue or press RESET.");
   }
-}
-
-async function saveMultipleExperimentsState(isMultiple) {
-  await chrome.storage.local.set({ multipleExperiments: isMultiple });
 }
 
 async function saveExperimentFieldsState() {
@@ -785,6 +768,14 @@ els.modeExp?.addEventListener("click", async () => {
   await saveMode("exp");
 });
 
+els.multiExpBtn?.addEventListener("click", async () => {
+  modeSetByUser = true;
+  setMode("multiple");
+  ensureExperimentFields();
+  saveExperimentFieldsState();
+  await saveMode("multiple");
+});
+
 els.modeUrl?.addEventListener("click", async () => {
   modeSetByUser = true;
   setMode("url");
@@ -797,7 +788,6 @@ els.env?.addEventListener("change", () => {
   updateBaseUrlLabel();
   validateMultipleExperiments();
 
-  // Persist env immediately since popup closes whenever focus shifts away.
   chrome.storage.local.set({
     env: els.env.value,
     customUrl: els.customUrl?.value.trim() || "",
@@ -809,11 +799,39 @@ els.customUrl?.addEventListener("input", () => {
   updateBaseUrlLabel();
   validateMultipleExperiments();
 
-  // Keep custom URL synced live so reopening popup restores in-progress value.
   chrome.storage.local.set({
     env: els.env.value,
     customUrl: els.customUrl?.value.trim() || "",
   });
+});
+
+// Localization and flags
+els.localization?.addEventListener("change", () => {
+  chrome.storage.local.set({ localization: els.localization.value });
+});
+
+els.flagF01?.addEventListener("change", () => {
+  if (els.flagF01.checked) {
+    if (els.flagM01) els.flagM01.checked = false;
+    if (els.flagWelcome) els.flagWelcome.checked = false;
+  }
+  chrome.storage.local.set({ flagF01: els.flagF01.checked, flagM01: false, flagWelcome: false });
+});
+
+els.flagM01?.addEventListener("change", () => {
+  if (els.flagM01.checked) {
+    if (els.flagF01) els.flagF01.checked = false;
+    if (els.flagWelcome) els.flagWelcome.checked = false;
+  }
+  chrome.storage.local.set({ flagM01: els.flagM01.checked, flagF01: false, flagWelcome: false });
+});
+
+els.flagWelcome?.addEventListener("change", () => {
+  if (els.flagWelcome.checked) {
+    if (els.flagF01) els.flagF01.checked = false;
+    if (els.flagM01) els.flagM01.checked = false;
+  }
+  chrome.storage.local.set({ flagWelcome: els.flagWelcome.checked, flagF01: false, flagM01: false });
 });
 
 // Experiment generate
@@ -869,13 +887,7 @@ els.variantCount?.addEventListener("input", persistSingleModeInputs);
 // Add input listener for URL mode validation
 els.urlInput?.addEventListener("input", validateUrlMode);
 
-// Go to page buttons (only for multiple experiments and URL mode)
-els.goToPageMultiple?.addEventListener("click", () => {
-  if (lastGeneratedUrlMultiple) {
-    window.open(lastGeneratedUrlMultiple, "_blank");
-  }
-});
-
+// Go to page (URL mode)
 els.goToPageUrl?.addEventListener("click", () => {
   if (lastGeneratedUrlSingle) {
     window.open(lastGeneratedUrlSingle, "_blank");
@@ -891,7 +903,10 @@ els.reset?.addEventListener("click", async () => {
     "lastUrl",
     "customUrl",
     "mode",
-    "multipleExperiments",
+    "localization",
+    "flagF01",
+    "flagM01",
+    "flagWelcome",
     "experimentFields",
   ]);
   els.gbexp.value = "";
@@ -900,23 +915,22 @@ els.reset?.addEventListener("click", async () => {
   if (els.urlInput) els.urlInput.value = "";
   if (els.customUrl) els.customUrl.value = "";
   if (els.customUrlRow) els.customUrlRow.hidden = true;
-  
-  els.multipleExperiments.checked = false;
+  if (els.localization) els.localization.value = "";
+  if (els.flagF01) els.flagF01.checked = false;
+  if (els.flagM01) els.flagM01.checked = false;
+  if (els.flagWelcome) els.flagWelcome.checked = false;
+
   experimentFields = [];
   els.experimentsContainer.innerHTML = "";
-  els.variantCount.disabled = false;
-  els.singleExpMode.hidden = false;
-  els.multipleExpMode.hidden = true;
 
   updateBaseUrlLabel();
   clearGrid();
   showError("");
   showErrorUrl("");
   setMode("exp");
-  
+
   lastGeneratedUrlMultiple = null;
   lastGeneratedUrlSingle = null;
-  if (els.goToPageMultiple) els.goToPageMultiple.disabled = true;
   if (els.goToPageUrl) els.goToPageUrl.disabled = true;
 });
 
@@ -943,7 +957,6 @@ els.urlInput?.addEventListener("keydown", (e) => {
 });
 
 // Multiple experiments listeners
-els.multipleExperiments?.addEventListener("change", toggleMultipleExperiments);
 els.addExperiment?.addEventListener("click", () => addExperimentField());
 els.genMultiple?.addEventListener("click", handleMultipleExperiments);
 

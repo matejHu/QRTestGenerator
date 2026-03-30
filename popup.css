@@ -39,9 +39,18 @@ input {
   background: #fff;
   transform: none;
 }
-.btn-secondary { 
-  font-size: 12px; 
+.btn-secondary {
+  font-size: 12px;
   padding: 8px 10px;
+}
+.btn-reset-small {
+  font-size: 12px;
+  background: #fce8e8;
+  border-color: #f0bcbc;
+  color: #b00020;
+}
+.btn-reset-small:active {
+  background: #f5d0d0;
 }
 
 .btn-secondary-reset {
