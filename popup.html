@@ -19,26 +19,13 @@
 </div>
 
 <div id="sectionExp">
-  <label class="label" for="gbexp">gbexp (experiment)</label>
-  <div class="row">
-    <input id="gbexp" inputmode="numeric" placeholder="202603" />
-    <button id="gen" class="btn">Generate</button>
-  </div>
-
-  <div class="row" style="margin-top: 10px;">
-    <div style="flex: 1;">
-      <label class="label" for="env">Environment</label>
-      <select id="env" class="select">
-        <option value="staging">Staging</option>
-        <option value="dev">Dev</option>
-        <option value="custom">Custom</option>
-      </select>
-    </div>
-
-    <div style="width: 140px;">
-      <label class="label" for="variantCount">Variants</label>
-      <input id="variantCount" inputmode="numeric" placeholder="3" />
-    </div>
+  <div style="margin-top: 10px;">
+    <label class="label" for="env">Environment</label>
+    <select id="env" class="select">
+      <option value="staging">Staging</option>
+      <option value="dev">Dev</option>
+      <option value="custom">Custom</option>
+    </select>
   </div>
 
   <div id="customUrlRow" hidden style="margin-top: 8px;">
@@ -48,6 +35,31 @@
 
   <div class="small" style="margin-top: 8px;">
     Base URL: <span id="baseUrlText"></span>
+  </div>
+
+  <div style="margin-top: 10px;">
+    <label class="checkboxLabel">
+      <input type="checkbox" id="multipleExperiments" />
+      Multiple experiments
+    </label>
+  </div>
+
+  <div id="singleExpMode">
+    <div class="experimentField">
+      <label class="label" style="margin-bottom: 6px;">Experiment</label>
+      <div class="row" style="margin-bottom: 0;">
+        <input id="gbexp" inputmode="numeric" placeholder="AB test id" style="flex: 2;" />
+        <input id="variantCount" inputmode="numeric" placeholder="No. of variants" style="flex: 1; max-width: 100px;" />
+      </div>
+    </div>
+    <button id="gen" class="btn" style="width: 100%; margin-top: 10px;">Generate</button>
+  </div>
+
+  <div id="multipleExpMode" hidden>
+    <div id="experimentsContainer"></div>
+    <button id="addExperiment" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">+ Add Experiment</button>
+    <button id="genMultiple" class="btn" style="width: 100%; margin-top: 10px;">Generate QR</button>
+    <button id="goToPageMultiple" class="btn btn-secondary" style="width: 100%; margin-top: 8px;" disabled>Go to page</button>
   </div>
 
   <div id="error" class="error" hidden></div>
@@ -62,8 +74,10 @@
     <button id="genUrl" class="btn">QR</button>
   </div>
 
+  <button id="goToPageUrl" class="btn btn-secondary" style="width: 100%; margin-top: 8px;" disabled>Go to page</button>
+
   <div class="small" style="margin-top: 6px; opacity: 0.75;">
-    Tip: Right-click any link → “Generate QR”
+    Tip: Right-click any link → "Generate QR"
   </div>
 </div>
 
