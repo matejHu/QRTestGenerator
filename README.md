@@ -38,7 +38,7 @@ const URLS = {
 
 ## URL Format
 
-### Experiment mode
+### Single experiment mode
 
 ```
 <baseUrl>/<locale?>/<flag?>/?gbexp=<experimentId>:<variantId>
