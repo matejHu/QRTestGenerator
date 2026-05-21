@@ -74,7 +74,7 @@ Example:
 
 ## Usage
 
-### Experiment mode
+### Single experiment mode
 
 1. Click **Experiment**
 2. Choose **Environment** (DEV / STAGING / CUSTOM)
