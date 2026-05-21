@@ -7,7 +7,7 @@
     "default_title": "GB QR",
     "default_popup": "popup.html"
   },
-  "permissions": ["storage", "contextMenus", "tabs"],
+  "permissions": ["storage", "contextMenus", "tabs", "windows"],
   "background": { "service_worker": "background.js" },
   "icons": {
     "128": "icon.png"
