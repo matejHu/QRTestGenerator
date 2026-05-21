@@ -76,7 +76,7 @@ Example:
 
 ### Single experiment mode
 
-1. Click **Experiment**
+1. Click **Single experiment**
 2. Choose **Environment** (DEV / STAGING / CUSTOM)
    - For **Custom**: a base URL input appears — paste any URL (e.g. a branch preview)
 3. Optionally select a **Localization** locale
