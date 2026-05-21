@@ -2,7 +2,7 @@
 
 Chrome extension for QA/testing that generates QR codes for:
 
-- **Experiment mode**: URLs with `gbexp` + `gbvar` (0..N-1) → QR per variant
+- **Single Experiment mode**: URLs with `gbexp` + `gbvar` (0..N-1) → QR per variant
 - **Multiple experiments mode**: combine multiple experiments into a single QR
 - **One-page URL mode**: paste any URL (branch preview etc.) → single QR
 - **Right-click mode**: generate a QR from any link / selected URL via context menu
