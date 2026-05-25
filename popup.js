@@ -20,10 +20,16 @@ const els = {
   genUrl: document.getElementById("genUrl"),
   customUrl: document.getElementById("customUrl"),
   customUrlRow: document.getElementById("customUrlRow"),
+  alsoGenerateMaster: document.getElementById("alsoGenerateMaster"),
+  customMasterEnv: document.getElementById("customMasterEnv"),
+  customMasterUrlRow: document.getElementById("customMasterUrlRow"),
+  alsoGenerateMasterRow: document.getElementById("alsoGenerateMasterRow"),
   localization: document.getElementById("localization"),
   flagF01: document.getElementById("flagF01"),
   flagM01: document.getElementById("flagM01"),
   flagWelcome: document.getElementById("flagWelcome"),
+  flagChm01: document.getElementById("flagChm01"),
+  flagChf01: document.getElementById("flagChf01"),
 
   // mode buttons
   modeExp: document.getElementById("modeExp"),
@@ -57,7 +63,33 @@ function getBaseUrl() {
 
 function updateBaseUrlLabel() {
   els.baseUrlText.textContent = getBaseUrl();
+  updateCustomUrlState();
+  updateAlternateBaseUrlRow();
 }
+
+function getAlternateBaseUrl() {
+  if (!els.alsoGenerateMaster?.checked) return "";
+  return URLS[els.customMasterEnv?.value] || URLS.staging;
+}
+
+function isCustomUrlMatchingKnownEnv() {
+  const custom = (els.customUrl?.value.trim() || "").replace(/\/+$/, "").toLowerCase();
+  return Object.values(URLS).some(url => url && url.replace(/\/+$/, "").toLowerCase() === custom);
+}
+
+function updateAlternateBaseUrlRow() {
+  if (!els.customMasterUrlRow || !els.alsoGenerateMaster) return;
+  const isCustom = els.env.value === "custom";
+  const isKnown = isCustomUrlMatchingKnownEnv();
+
+  if (els.alsoGenerateMasterRow) els.alsoGenerateMasterRow.hidden = !isCustom || isKnown;
+  if (isKnown && els.alsoGenerateMaster.checked) els.alsoGenerateMaster.checked = false;
+
+  els.customMasterUrlRow.hidden = !(isCustom && !isKnown && els.alsoGenerateMaster.checked);
+}
+
+const KNOWN_LOCALES = new Set(["en", "cs", "nl", "fr", "de", "hu", "it", "ja", "ko", "pl", "pt", "ru", "sk", "es", "tr"]);
+const KNOWN_FLAGS = new Set(["f01", "m01", "welcome", "chm01", "chf01"]);
 
 function buildPathSegments() {
   const segments = [];
@@ -66,11 +98,122 @@ function buildPathSegments() {
   if (els.flagF01?.checked) segments.push("f01");
   if (els.flagM01?.checked) segments.push("m01");
   if (els.flagWelcome?.checked) segments.push("welcome");
+  if (els.flagChm01?.checked) segments.push("chm01");
+  if (els.flagChf01?.checked) segments.push("chf01");
   return segments;
 }
 
+function parsePathSegments(url) {
+  try {
+    const u = new URL(url);
+    return u.pathname.split("/").filter(Boolean).map((segment) => decodeURIComponent(segment));
+  } catch {
+    return [];
+  }
+}
+
+function detectCustomUrlSegments(customUrl) {
+  const segments = parsePathSegments(customUrl);
+  const result = { locale: "", flag: "" };
+  if (segments.length === 0) return result;
+
+  const first = segments[0];
+  const second = segments[1];
+
+  if (KNOWN_LOCALES.has(first)) {
+    result.locale = first;
+    if (KNOWN_FLAGS.has(second)) {
+      result.flag = second;
+    }
+  } else if (KNOWN_FLAGS.has(first)) {
+    result.flag = first;
+  }
+
+  return result;
+}
+
+function normalizeBaseUrl(baseUrl) {
+  try {
+    const u = new URL(baseUrl);
+    const segments = u.pathname.split("/").filter(Boolean);
+    let skip = 0;
+
+    if (segments.length > 0 && KNOWN_LOCALES.has(segments[0])) {
+      skip = 1;
+    }
+    if (segments.length > skip && KNOWN_FLAGS.has(segments[skip])) {
+      skip += 1;
+    }
+
+    if (skip === 0) {
+      return u.toString();
+    }
+
+    const remaining = segments.slice(skip).join("/");
+    u.pathname = remaining ? `/${remaining}/` : "/";
+    return u.toString();
+  } catch {
+    return baseUrl;
+  }
+}
+
+function setCustomUrlInfo(message) {
+  if (!els.customUrlInfo) return;
+  els.customUrlInfo.hidden = !message;
+  els.customUrlInfo.textContent = message || "";
+}
+
+function setCustomUrlModesEnabled(enableLocale, enableFlag) {
+  if (els.localization) els.localization.disabled = !enableLocale;
+  if (els.flagF01) els.flagF01.disabled = !enableFlag;
+  if (els.flagM01) els.flagM01.disabled = !enableFlag;
+  if (els.flagWelcome) els.flagWelcome.disabled = !enableFlag;
+  if (els.flagChm01) els.flagChm01.disabled = !enableFlag;
+  if (els.flagChf01) els.flagChf01.disabled = !enableFlag;
+}
+
+function updateCustomUrlState() {
+  if (!els.customUrl || els.env.value !== "custom") {
+    setCustomUrlInfo("");
+    setCustomUrlModesEnabled(true, true);
+    return;
+  }
+
+  const customUrl = els.customUrl.value.trim();
+  if (!customUrl) {
+    setCustomUrlInfo("");
+    setCustomUrlModesEnabled(true, true);
+    return;
+  }
+
+  const detected = detectCustomUrlSegments(customUrl);
+  const parts = [];
+
+  if (detected.locale) {
+    if (els.localization) els.localization.value = detected.locale;
+    parts.push(`locale: ${detected.locale}`);
+  }
+
+  if (detected.flag) {
+    if (els.flagF01) els.flagF01.checked = detected.flag === "f01";
+    if (els.flagM01) els.flagM01.checked = detected.flag === "m01";
+    if (els.flagWelcome) els.flagWelcome.checked = detected.flag === "welcome";
+    if (els.flagChm01) els.flagChm01.checked = detected.flag === "chm01";
+    if (els.flagChf01) els.flagChf01.checked = detected.flag === "chf01";
+    parts.push(`flag: ${detected.flag}`);
+  }
+
+  setCustomUrlInfo(
+    parts.length > 0
+      ? `Detected ${parts.join(", ")} in custom URL. These options are locked to prevent duplication.`
+      : ""
+  );
+
+  setCustomUrlModesEnabled(!detected.locale, !detected.flag);
+}
+
 function buildUrl(baseUrl, gbexp, gbvar) {
-  const u = new URL(baseUrl);
+  const u = new URL(normalizeBaseUrl(baseUrl));
   const segments = buildPathSegments();
   if (segments.length > 0) {
     const base = u.pathname.endsWith("/") ? u.pathname : u.pathname + "/";
@@ -82,7 +225,7 @@ function buildUrl(baseUrl, gbexp, gbvar) {
 }
 
 function buildMultiExperimentUrl(baseUrl, experiments) {
-  const u = new URL(baseUrl);
+  const u = new URL(normalizeBaseUrl(baseUrl));
   const segments = buildPathSegments();
   if (segments.length > 0) {
     const base = u.pathname.endsWith("/") ? u.pathname : u.pathname + "/";
@@ -164,16 +307,23 @@ function addExperimentField(prefillGbexp = "") {
   const fieldDiv = document.createElement("div");
   fieldDiv.className = "experimentField";
   fieldDiv.dataset.index = index;
-
   fieldDiv.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-      <label class="label" style="margin: 0;">Experiment ${index + 1}</label>
-      ${index > 0 ? '<button class="removeExpBtn" type="button">✕</button>' : ''}
+    ${index > 0 ? '<div style="display: flex; justify-content: flex-end; margin-bottom: 4px;"><button class="removeExpBtn" type="button">✕</button></div>' : ''}
+    <div class="row" style="margin-bottom: 8px; gap: 8px; flex-wrap: nowrap; align-items: flex-end;">
+      <div style="flex: 3 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end;">
+        <label class="label" style="margin-bottom: 6px;">Experiment ${index + 1}</label>
+        <input class="expInput" inputmode="numeric" placeholder="Test id" data-field="gbexp" style="width: 100%; min-width: 0;" />
+      </div>
+      <div style="flex: 1 1 0; min-width: 0; max-width: 110px; display: flex; flex-direction: column; justify-content: flex-end;">
+        <label class="label" style="margin-bottom: 6px;">Variant</label>
+        <input class="varInput" inputmode="numeric" placeholder="0" data-field="gbvar" style="width: 100%; min-width: 0;" />
+      </div>
+      <div style="flex: 1 1 0; min-width: 0; max-width: 120px; display: flex; flex-direction: column; justify-content: flex-end;">
+        <label class="label" style="margin-bottom: 6px;">Var. count</label>
+        <input class="countInput" inputmode="numeric" placeholder="Count" data-field="varCount" style="width: 100%; min-width: 0;" />
+      </div>
     </div>
-    <div class="row" style="margin-bottom: 8px;">
-      <input class="expInput" inputmode="numeric" placeholder="AB test id" data-field="gbexp" style="flex: 2;" />
-      <input class="varInput" inputmode="numeric" placeholder="Cntrl=0, A=1 ..." data-field="gbvar" style="flex: 1; max-width: 80px;" />
-    </div>
+    <div class="small" style="margin-top: -4px; opacity: 0.8;">Fill either Variant or Variant count. Leave one empty.</div>
   `;
 
   els.experimentsContainer.appendChild(fieldDiv);
@@ -191,8 +341,13 @@ function addExperimentField(prefillGbexp = "") {
     gbexpInput.value = prefillGbexp;
   }
 
+  const expLabel = fieldDiv.querySelector(".label");
+  const countInput = fieldDiv.querySelector('[data-field="varCount"]');
+
   if (gbexpInput) {
     gbexpInput.addEventListener("input", () => {
+      const id = gbexpInput.value.trim();
+      expLabel.textContent = id ? `Experiment ${id}` : `Experiment ${index + 1}`;
       validateMultipleExperiments();
       saveExperimentFieldsState();
     });
@@ -200,6 +355,13 @@ function addExperimentField(prefillGbexp = "") {
 
   if (gbvarInput) {
     gbvarInput.addEventListener("input", () => {
+      validateMultipleExperiments();
+      saveExperimentFieldsState();
+    });
+  }
+
+  if (countInput) {
+    countInput.addEventListener("input", () => {
       validateMultipleExperiments();
       saveExperimentFieldsState();
     });
@@ -239,12 +401,14 @@ function collectExperimentData() {
   for (const field of experimentFields) {
     const gbexpInput = field.querySelector('[data-field="gbexp"]');
     const gbvarInput = field.querySelector('[data-field="gbvar"]');
+    const varCountInput = field.querySelector('[data-field="varCount"]');
 
-    const gbexp = gbexpInput.value.trim();
-    const gbvar = gbvarInput.value.trim();
+    const gbexp = String(gbexpInput?.value || "").trim();
+    const gbvar = String(gbvarInput?.value || "").trim();
+    const varCountValue = String(varCountInput?.value || "").trim();
 
-    if (!gbexp || !gbvar) {
-      throw new Error("All experiment fields must be filled");
+    if (!gbexp) {
+      throw new Error("Experiment id is required for every row");
     }
 
     if (!isValidExp(gbexp)) {
@@ -256,14 +420,47 @@ function collectExperimentData() {
     }
     seenGbexp.add(gbexp);
 
-    if (!isValidExp(gbvar)) {
-      throw new Error(`Invalid gbvar: ${gbvar}`);
+    if (gbvar && varCountValue) {
+      throw new Error("Fill either Variant or Variant count, not both.");
     }
 
-    experiments.push({ gbexp, gbvar });
+    if (!gbvar && !varCountValue) {
+      throw new Error("Each experiment row needs either Variant or Variant count.");
+    }
+
+    let variants = [];
+    if (gbvar) {
+      if (!isValidExp(gbvar)) {
+        throw new Error(`Invalid gbvar: ${gbvar}`);
+      }
+      variants = [gbvar];
+    } else {
+      const count = parseVariantCount(varCountValue);
+      if (!count) {
+        throw new Error(`Invalid variant count for experiment ${gbexp}.`);
+      }
+      variants = Array.from({ length: count }, (_, index) => String(index));
+    }
+
+    experiments.push({ gbexp, variants });
   }
 
   return experiments;
+}
+
+function buildExperimentCombinations(experiments) {
+  return experiments.reduce(
+    (acc, experiment) => {
+      const combos = [];
+      for (const combo of acc) {
+        for (const gbvar of experiment.variants) {
+          combos.push([...combo, { gbexp: experiment.gbexp, gbvar }]);
+        }
+      }
+      return combos;
+    },
+    [[]]
+  );
 }
 
 async function handleMultipleExperiments() {
@@ -284,94 +481,126 @@ async function handleMultipleExperiments() {
       return;
     }
 
-    const url = buildMultiExperimentUrl(baseUrl, experiments);
-    lastGeneratedUrlMultiple = url;
+    const combos = buildExperimentCombinations(experiments);
+    const alternateUrl = getAlternateBaseUrl();
+    const groups = [{ url: baseUrl, label: "Primary" }];
+    if (alternateUrl) {
+      groups.push({ url: alternateUrl, label: "Alternate" });
+    }
 
-    const card = document.createElement("div");
-    card.className = "card";
+    const maxCards = 60;
+    if (combos.length * groups.length > maxCards) {
+      throw new Error(`Too many combinations (${combos.length * groups.length}). Reduce the number of variants or disable the alternate URL option.`);
+    }
 
-    const header = document.createElement("div");
-    header.className = "cardHeader";
+    const allUrls = [];
+    groups.forEach((group) => {
+      combos.forEach((combo, comboIndex) => {
+        const url = buildMultiExperimentUrl(group.url, combo);
+        allUrls.push(url);
 
-    const title = document.createElement("div");
-    title.innerHTML = `<strong>Multiple Experiments</strong> <span class="badge">${experiments.length} exp</span>`;
-    header.appendChild(title);
+        const card = document.createElement("div");
+        card.className = "card";
 
-    const details = document.createElement("div");
-    details.style.fontSize = "11px";
-    details.style.marginBottom = "8px";
-    details.style.opacity = "0.8";
-    experiments.forEach((exp, i) => {
-      const line = document.createElement("div");
-      line.textContent = `${i + 1}. gbexp=${exp.gbexp}, gbvar=${exp.gbvar}`;
-      details.appendChild(line);
+        const header = document.createElement("div");
+        header.className = "cardHeader";
+
+        const title = document.createElement("div");
+        title.innerHTML = `<strong>Combo ${comboIndex + 1}</strong> <span class="badge">${combo.length} exp</span> <span class="badge">${group.label}</span>`;
+        header.appendChild(title);
+
+        const testedLabel = document.createElement("label");
+        testedLabel.className = "checkboxLabel";
+        testedLabel.style.marginLeft = "auto";
+        testedLabel.style.fontSize = "12px";
+        const testedInput = document.createElement("input");
+        testedInput.type = "checkbox";
+        testedInput.style.margin = "0";
+        testedLabel.appendChild(testedInput);
+        testedLabel.appendChild(document.createTextNode("Tested"));
+        header.appendChild(testedLabel);
+
+        const details = document.createElement("div");
+        details.style.fontSize = "11px";
+        details.style.marginBottom = "8px";
+        details.style.opacity = "0.8";
+        combo.forEach((exp, i) => {
+          const line = document.createElement("div");
+          line.textContent = `${i + 1}. gbexp=${exp.gbexp}, gbvar=${exp.gbvar}`;
+          details.appendChild(line);
+        });
+
+        const qrWrap = document.createElement("div");
+        qrWrap.className = "qr";
+
+        const qrBox = document.createElement("div");
+        qrBox.className = "qrBox";
+        qrWrap.appendChild(qrBox);
+
+        try {
+          qrBox.innerHTML = "";
+          new QRCode(qrBox, {
+            text: url,
+            width: DEFAULTS.qrSize,
+            height: DEFAULTS.qrSize,
+            correctLevel: QRCode.CorrectLevel.M,
+          });
+        } catch (err) {
+          showError("QR generation failed: " + (err?.message || String(err)));
+        }
+
+        const urlEl = document.createElement("div");
+        urlEl.className = "url";
+        urlEl.textContent = url;
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        const copyBtn = document.createElement("button");
+        copyBtn.className = "btn btn-secondary";
+        copyBtn.textContent = "Copy URL";
+        copyBtn.onclick = async () => {
+          await copyText(url);
+        };
+
+        const downloadBtn = document.createElement("button");
+        downloadBtn.className = "btn btn-secondary";
+        downloadBtn.textContent = "Download QR";
+        downloadBtn.onclick = () => {
+          const dataUrl = getQrDataUrl(qrBox);
+          if (dataUrl) {
+            downloadDataUrl(dataUrl, `qr-multi-exp-${group.label.toLowerCase()}.png`);
+          }
+        };
+
+        const goToPageBtn = document.createElement("button");
+        goToPageBtn.className = "btn btn-secondary";
+        goToPageBtn.textContent = "Go to page";
+        goToPageBtn.addEventListener("click", () => {
+          chrome.windows.create({ url, incognito: true });
+        });
+
+        actions.appendChild(copyBtn);
+        actions.appendChild(downloadBtn);
+        actions.appendChild(goToPageBtn);
+
+        card.appendChild(header);
+        card.appendChild(details);
+        card.appendChild(qrWrap);
+        card.appendChild(urlEl);
+        card.appendChild(actions);
+
+        els.grid.appendChild(card);
+      });
     });
-
-    const qrWrap = document.createElement("div");
-    qrWrap.className = "qr";
-
-    const qrBox = document.createElement("div");
-    qrBox.className = "qrBox";
-    qrWrap.appendChild(qrBox);
-
-    new QRCode(qrBox, {
-      text: url,
-      width: DEFAULTS.qrSize,
-      height: DEFAULTS.qrSize,
-      correctLevel: QRCode.CorrectLevel.M,
-    });
-
-    const urlEl = document.createElement("div");
-    urlEl.className = "url";
-    urlEl.textContent = url;
-
-    const actions = document.createElement("div");
-    actions.className = "actions";
-
-    const copyBtn = document.createElement("button");
-    copyBtn.className = "btn btn-secondary";
-    copyBtn.textContent = "Copy URL";
-    copyBtn.onclick = async () => {
-      await copyText(url);
-    };
-
-    const downloadBtn = document.createElement("button");
-    downloadBtn.className = "btn btn-secondary";
-    downloadBtn.textContent = "Download QR";
-    downloadBtn.onclick = () => {
-      const dataUrl = getQrDataUrl(qrBox);
-      if (dataUrl) {
-        downloadDataUrl(dataUrl, `qr-multi-exp.png`);
-      }
-    };
-
-    const goToPageBtn = document.createElement("button");
-    goToPageBtn.className = "btn btn-secondary";
-    goToPageBtn.textContent = "Go to page";
-    goToPageBtn.addEventListener("click", () => {
-      chrome.windows.create({ url, incognito: true });
-    });
-
-    actions.appendChild(copyBtn);
-    actions.appendChild(downloadBtn);
-    actions.appendChild(goToPageBtn);
-
-    card.appendChild(header);
-    card.appendChild(details);
-    card.appendChild(qrWrap);
-    card.appendChild(urlEl);
-    card.appendChild(actions);
-
-    els.grid.appendChild(card);
 
     els.copyAll.disabled = false;
-    els.copyAll.textContent = "Copy URL";
+    els.copyAll.textContent = "Copy all URLs";
     els.copyAll.onclick = async () => {
-      await copyText(url);
+      await copyText(allUrls.join("\n"));
     };
 
     saveExperimentFieldsState();
-
   } catch (err) {
     showError(err.message || "Error generating QR code");
   }
@@ -395,8 +624,8 @@ function setMode(mode) {
   showError("");
   showErrorUrl("");
 
-  els.copyAll.textContent = isExp ? "Copy all URLs" : "Copy URL";
-  els.copyAll.hidden = isMultiple || isUrl;
+  els.copyAll.textContent = isUrl ? "Copy URL" : "Copy all URLs";
+  els.copyAll.hidden = isUrl;
 }
 
 async function saveMode(mode) {
@@ -445,21 +674,7 @@ function variantLabel(i) {
   return `Variant (${i})`;
 }
 
-function renderCards({ exp, envKey, variantCount }) {
-  clearGrid();
-  showError("");
-  showErrorUrl("");
-
-  if (typeof QRCode === "undefined") {
-    showError(
-      "QRCode is not defined. Check that vendor/qrcode.js is loaded before popup.js in popup.html."
-    );
-    return;
-  }
-
-  const baseUrl = envKey === "custom" ? (els.customUrl?.value.trim() || "") : URLS[envKey];
-  els.baseUrlText.textContent = baseUrl;
-
+function renderSingleExperimentGroup({ baseUrl, exp, variantCount, sourceLabel }) {
   const urls = [];
 
   for (let i = 0; i < variantCount; i++) {
@@ -473,8 +688,19 @@ function renderCards({ exp, envKey, variantCount }) {
     header.className = "cardHeader";
 
     const title = document.createElement("div");
-    title.innerHTML = `<strong>gbvar: ${i}</strong> <span class="badge">${variantLabel(i)}</span>`;
+    title.innerHTML = `<strong>gbvar: ${i}</strong> <span class="badge">${variantLabel(i)}</span>${sourceLabel ? ` <span class="badge">${sourceLabel}</span>` : ""}`;
     header.appendChild(title);
+
+    const checkedLabel = document.createElement("label");
+    checkedLabel.className = "checkboxLabel";
+    checkedLabel.style.marginLeft = "auto";
+    checkedLabel.style.fontSize = "12px";
+    const checkedInput = document.createElement("input");
+    checkedInput.type = "checkbox";
+    checkedInput.style.margin = "0";
+    checkedLabel.appendChild(checkedInput);
+    checkedLabel.appendChild(document.createTextNode("Tested"));
+    header.appendChild(checkedLabel);
 
     const qrWrap = document.createElement("div");
     qrWrap.className = "qr";
@@ -518,7 +744,7 @@ function renderCards({ exp, envKey, variantCount }) {
         showError("Could not extract QR image for download.");
         return;
       }
-      downloadDataUrl(dataUrl, `gbexp-${exp}_gbvar-${i}_${envKey}.png`);
+      downloadDataUrl(dataUrl, `gbexp-${exp}_gbvar-${i}_${sourceLabel || "primary"}.png`);
     });
 
     const goToPageBtn = document.createElement("button");
@@ -538,6 +764,30 @@ function renderCards({ exp, envKey, variantCount }) {
     card.appendChild(actions);
 
     els.grid.appendChild(card);
+  }
+
+  return urls;
+}
+
+function renderCards({ exp, envKey, variantCount }) {
+  clearGrid();
+  showError("");
+  showErrorUrl("");
+
+  if (typeof QRCode === "undefined") {
+    showError(
+      "QRCode is not defined. Check that vendor/qrcode.js is loaded before popup.js in popup.html."
+    );
+    return;
+  }
+
+  const baseUrl = envKey === "custom" ? (els.customUrl?.value.trim() || "") : URLS[envKey];
+  const alternateUrl = envKey === "custom" ? getAlternateBaseUrl() : "";
+  els.baseUrlText.textContent = baseUrl;
+
+  const urls = renderSingleExperimentGroup({ baseUrl, exp, variantCount, sourceLabel: "" });
+  if (alternateUrl) {
+    urls.push(...renderSingleExperimentGroup({ baseUrl: alternateUrl, exp, variantCount, sourceLabel: "Alternate" }));
   }
 
   els.copyAll.disabled = false;
@@ -568,21 +818,30 @@ async function loadState() {
       "lastUrl",
       "mode",
       "customUrl",
+      "customMasterEnv",
+      "alsoGenerateMaster",
       "localization",
       "flagF01",
       "flagM01",
       "flagWelcome",
+      "flagChm01",
+      "flagChf01",
       "experimentFields",
     ]);
 
     if (data.gbexp) els.gbexp.value = String(data.gbexp);
     els.env.value = ["dev", "staging", "custom"].includes(data.env) ? data.env : DEFAULTS.env;
     if (els.customUrl && data.customUrl) els.customUrl.value = String(data.customUrl);
+    if (els.customMasterEnv && data.customMasterEnv) els.customMasterEnv.value = data.customMasterEnv;
+    if (els.alsoGenerateMaster) els.alsoGenerateMaster.checked = Boolean(data.alsoGenerateMaster);
     if (els.customUrlRow) els.customUrlRow.hidden = els.env.value !== "custom";
+    updateAlternateBaseUrlRow();
     if (els.localization && data.localization) els.localization.value = String(data.localization);
     if (els.flagF01 && data.flagF01) els.flagF01.checked = Boolean(data.flagF01);
     if (els.flagM01 && data.flagM01) els.flagM01.checked = Boolean(data.flagM01);
     if (els.flagWelcome && data.flagWelcome) els.flagWelcome.checked = Boolean(data.flagWelcome);
+    if (els.flagChm01 && data.flagChm01) els.flagChm01.checked = Boolean(data.flagChm01);
+    if (els.flagChf01 && data.flagChf01) els.flagChf01.checked = Boolean(data.flagChf01);
 
     const hasSavedVariantCount =
       data.variantCount !== undefined && data.variantCount !== null && String(data.variantCount).trim() !== "";
@@ -601,9 +860,13 @@ async function loadState() {
           const lastField = experimentFields[experimentFields.length - 1];
           const gbexpInput = lastField.querySelector('[data-field="gbexp"]');
           const gbvarInput = lastField.querySelector('[data-field="gbvar"]');
+          const countInput = lastField.querySelector('[data-field="varCount"]');
+          const expLabel = lastField.querySelector(".label");
           const safeExp = expData && typeof expData === "object" ? expData : {};
           if (gbexpInput) gbexpInput.value = String(safeExp.gbexp ?? "");
           if (gbvarInput) gbvarInput.value = String(safeExp.gbvar ?? "");
+          if (countInput) countInput.value = String(safeExp.varCount ?? "");
+          if (expLabel && safeExp.gbexp) expLabel.textContent = `Experiment ${safeExp.gbexp}`;
         });
         validateMultipleExperiments();
       } else {
@@ -615,6 +878,7 @@ async function loadState() {
     }
 
     updateBaseUrlLabel();
+    updateCustomUrlState();
     validateUrlMode();
 
     // In URL mode, restore the previously generated one-page QR card.
@@ -647,9 +911,11 @@ async function saveExperimentFieldsState() {
   const fieldsData = experimentFields.map(field => {
     const gbexpInput = field.querySelector('[data-field="gbexp"]');
     const gbvarInput = field.querySelector('[data-field="gbvar"]');
+    const countInput = field.querySelector('[data-field="varCount"]');
     return {
       gbexp: gbexpInput ? gbexpInput.value : "",
       gbvar: gbvarInput ? gbvarInput.value : "",
+      varCount: countInput ? countInput.value : "",
     };
   });
   await chrome.storage.local.set({ experimentFields: fieldsData });
@@ -788,6 +1054,7 @@ els.env?.addEventListener("change", () => {
   updateBaseUrlLabel();
   validateMultipleExperiments();
 
+  updateBaseUrlLabel();
   chrome.storage.local.set({
     env: els.env.value,
     customUrl: els.customUrl?.value.trim() || "",
@@ -805,6 +1072,15 @@ els.customUrl?.addEventListener("input", () => {
   });
 });
 
+els.alsoGenerateMaster?.addEventListener("change", () => {
+  updateAlternateBaseUrlRow();
+  chrome.storage.local.set({ alsoGenerateMaster: els.alsoGenerateMaster.checked });
+});
+
+els.customMasterEnv?.addEventListener("change", () => {
+  chrome.storage.local.set({ customMasterEnv: els.customMasterEnv.value });
+});
+
 // Localization and flags
 els.localization?.addEventListener("change", () => {
   chrome.storage.local.set({ localization: els.localization.value });
@@ -814,24 +1090,50 @@ els.flagF01?.addEventListener("change", () => {
   if (els.flagF01.checked) {
     if (els.flagM01) els.flagM01.checked = false;
     if (els.flagWelcome) els.flagWelcome.checked = false;
+    if (els.flagChm01) els.flagChm01.checked = false;
+    if (els.flagChf01) els.flagChf01.checked = false;
   }
-  chrome.storage.local.set({ flagF01: els.flagF01.checked, flagM01: false, flagWelcome: false });
+  chrome.storage.local.set({ flagF01: els.flagF01.checked, flagM01: false, flagWelcome: false, flagChm01: false, flagChf01: false });
 });
 
 els.flagM01?.addEventListener("change", () => {
   if (els.flagM01.checked) {
     if (els.flagF01) els.flagF01.checked = false;
     if (els.flagWelcome) els.flagWelcome.checked = false;
+    if (els.flagChm01) els.flagChm01.checked = false;
+    if (els.flagChf01) els.flagChf01.checked = false;
   }
-  chrome.storage.local.set({ flagM01: els.flagM01.checked, flagF01: false, flagWelcome: false });
+  chrome.storage.local.set({ flagM01: els.flagM01.checked, flagF01: false, flagWelcome: false, flagChm01: false, flagChf01: false });
 });
 
 els.flagWelcome?.addEventListener("change", () => {
   if (els.flagWelcome.checked) {
     if (els.flagF01) els.flagF01.checked = false;
     if (els.flagM01) els.flagM01.checked = false;
+    if (els.flagChm01) els.flagChm01.checked = false;
+    if (els.flagChf01) els.flagChf01.checked = false;
   }
-  chrome.storage.local.set({ flagWelcome: els.flagWelcome.checked, flagF01: false, flagM01: false });
+  chrome.storage.local.set({ flagWelcome: els.flagWelcome.checked, flagF01: false, flagM01: false, flagChm01: false, flagChf01: false });
+});
+
+els.flagChm01?.addEventListener("change", () => {
+  if (els.flagChm01.checked) {
+    if (els.flagF01) els.flagF01.checked = false;
+    if (els.flagM01) els.flagM01.checked = false;
+    if (els.flagWelcome) els.flagWelcome.checked = false;
+    if (els.flagChf01) els.flagChf01.checked = false;
+  }
+  chrome.storage.local.set({ flagChm01: els.flagChm01.checked, flagF01: false, flagM01: false, flagWelcome: false, flagChf01: false });
+});
+
+els.flagChf01?.addEventListener("change", () => {
+  if (els.flagChf01.checked) {
+    if (els.flagF01) els.flagF01.checked = false;
+    if (els.flagM01) els.flagM01.checked = false;
+    if (els.flagWelcome) els.flagWelcome.checked = false;
+    if (els.flagChm01) els.flagChm01.checked = false;
+  }
+  chrome.storage.local.set({ flagChf01: els.flagChf01.checked, flagF01: false, flagM01: false, flagWelcome: false, flagChm01: false });
 });
 
 // Experiment generate
@@ -902,6 +1204,8 @@ els.reset?.addEventListener("click", async () => {
     "variantCount",
     "lastUrl",
     "customUrl",
+    "customMasterEnv",
+    "alsoGenerateMaster",
     "mode",
     "localization",
     "flagF01",
@@ -914,7 +1218,11 @@ els.reset?.addEventListener("click", async () => {
   els.variantCount.value = "";
   if (els.urlInput) els.urlInput.value = "";
   if (els.customUrl) els.customUrl.value = "";
+  if (els.customMasterEnv) els.customMasterEnv.value = "staging";
+  if (els.alsoGenerateMaster) els.alsoGenerateMaster.checked = false;
   if (els.customUrlRow) els.customUrlRow.hidden = true;
+  if (els.customMasterUrlRow) els.customMasterUrlRow.hidden = true;
+  if (els.alsoGenerateMasterRow) els.alsoGenerateMasterRow.hidden = true;
   if (els.localization) els.localization.value = "";
   if (els.flagF01) els.flagF01.checked = false;
   if (els.flagM01) els.flagM01.checked = false;

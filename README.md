@@ -1,8 +1,8 @@
-# GB QR Chrome Extension
+# GrowthBook QR code generator
 
 Chrome extension for QA/testing that generates QR codes for:
 
-- **Single Experiment mode**: URLs with `gbexp` + `gbvar` (0..N-1) → QR per variant
+- **Single experiment mode**: URLs with `gbexp` + variant count (0..N-1) → QR per variant
 - **Multiple experiments mode**: combine multiple experiments into a single QR
 - **One-page URL mode**: paste any URL (branch preview etc.) → single QR
 - **Right-click mode**: generate a QR from any link / selected URL via context menu
@@ -13,11 +13,12 @@ Chrome extension for QA/testing that generates QR codes for:
 
 - DEV / STAGING / CUSTOM environment switch (custom lets you enter any base URL)
 - **Localization**: optional locale path prefix added to the URL (e.g. `/en/`, `/cs/`)
-- **Flags**: optional path segment injected before query params — `/f01/`, `/m01/`, `/welcome/` (mutually exclusive — only one can be active at a time)
+- **Flags**: optional path segment injected before query params — `/f01/`, `/m01/`, `/welcome/`, `/chm01/`, `/chf01/` (mutually exclusive — only one can be active at a time)
+- **Alternative branch QR**: when using a Custom environment (feature branch), optionally generate a second set of QR codes for Staging or Dev — place them side by side to reproduce a bug and verify the fix
 - Custom variant count (generates `gbvar=0..N-1`)
 - Download QR as PNG
 - **Go to page** opens the URL in a new **private (incognito)** window
-- Saves last values to `chrome.storage.local` (until Reset)
+- Input values persist across popup sessions without needing to generate first
 - Right-click any link / selected URL → **Generate QR**
 
 ---
@@ -76,28 +77,29 @@ Example:
 
 ### Single experiment mode
 
-1. Click **Single experiment**
+1. Click **Single**
 2. Choose **Environment** (DEV / STAGING / CUSTOM)
    - For **Custom**: a base URL input appears — paste any URL (e.g. a branch preview)
+   - If the URL is a feature branch, a **"Also generate QR for comparison environment"** checkbox appears — check it and pick Staging or Dev to generate both sets of QR codes side by side
 3. Optionally select a **Localization** locale
-4. Optionally check one **Flag** (`/f01/`, `/m01/`, `/welcome/`) — flags are mutually exclusive
-5. Enter `gbexp` (experiment id) and number of variants
-6. Click **Generate** — one QR card per variant is shown
+4. Optionally check one **Flag** (`/f01/`, `/m01/`, `/welcome/`, `/chm01/`, `/chf01/`) — flags are mutually exclusive
+5. Enter the experiment id and variant count
+6. Click **Generate QR** — one QR card per variant is shown
 7. Each card has **Copy URL**, **Download QR**, and **Go to page** (opens incognito)
 
 ### Multiple experiments mode
 
 1. Click **Multiple**
 2. Configure environment, locale, and flag as above
-3. Fill in experiment id and variant for each row
-4. Click **+ Add Experiment** to add more (up to 5)
+3. Fill in experiment id, variant, and variant count for each row — the card header updates to show the experiment id as you type
+4. Click **+ Add Experiment** to add more (up to 5); use the **✕** button to remove a card
 5. Click **Generate QR** — a single QR covering all experiments is shown
 
 ### One-page URL mode
 
 1. Click **One-page URL**
 2. Paste a full URL (including `https://`)
-3. Click **QR**
+3. Click **Generate QR**
 4. Use **Go to page** to open the URL in an incognito window
 
 ### Right-click QR (context menu)
