@@ -1268,7 +1268,29 @@ els.urlInput?.addEventListener("keydown", (e) => {
 els.addExperiment?.addEventListener("click", () => addExperimentField());
 els.genMultiple?.addEventListener("click", handleMultipleExperiments);
 
+// Theme toggle
+const themeToggleBtn = document.getElementById("themeToggle");
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  if (themeToggleBtn) themeToggleBtn.textContent = theme === "dark" ? "☀️" : "🌙";
+}
+
+async function loadTheme() {
+  const { theme } = await chrome.storage.local.get("theme");
+  if (theme) applyTheme(theme);
+}
+
+themeToggleBtn?.addEventListener("click", () => {
+  const current = document.documentElement.dataset.theme;
+  const isDark = current === "dark" || (!current && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const next = isDark ? "light" : "dark";
+  applyTheme(next);
+  chrome.storage.local.set({ theme: next });
+});
+
 // Init
 updateBaseUrlLabel();
 loadMode();
+loadTheme();
 loadState();
