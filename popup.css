@@ -89,6 +89,7 @@ html[data-theme="dark"] {
   --remove-border:   #6b2626;
   --remove-text:     #ff6b6b;
   --remove-active:   #4d2020;
+  
 }
 
 body { margin: 0; width: 360px; background: var(--bg); color: var(--text); }
@@ -257,6 +258,11 @@ html[data-theme="dark"] .select {
 }
 
 .qrBox { width: 220px; height: 220px; }
+@media (prefers-color-scheme: dark) {
+  .qrBox { border: 2px solid #ffffff; }
+}
+html[data-theme="dark"] .qrBox { border: 2px solid #ffffff; }
+html[data-theme="light"] .qrBox { border: none; }
 .qrBox img, .qrBox canvas { width: 220px; height: 220px; }
 
 .modeRow {
