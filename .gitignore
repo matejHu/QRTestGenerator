@@ -1,2 +1,4 @@
 # Local configuration — contains real URLs, do not commit
 config.js
+
+.DS_Store
