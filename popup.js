@@ -195,14 +195,14 @@ function updateCustomUrlState() {
     parts.push(`locale: ${detected.locale}`);
   }
 
-  if (detected.flag) {
-    if (els.flagF01) els.flagF01.checked = detected.flag === "f01";
-    if (els.flagM01) els.flagM01.checked = detected.flag === "m01";
-    if (els.flagWelcome) els.flagWelcome.checked = detected.flag === "welcome";
-    if (els.flagChm01) els.flagChm01.checked = detected.flag === "chm01";
-    if (els.flagChf01) els.flagChf01.checked = detected.flag === "chf01";
-    parts.push(`flag: ${detected.flag}`);
-  }
+  // Always sync flag checkboxes to what the URL declares — clears stale selection
+  // when user edits a custom URL to remove a flag that was previously detected.
+  if (els.flagF01) els.flagF01.checked = detected.flag === "f01";
+  if (els.flagM01) els.flagM01.checked = detected.flag === "m01";
+  if (els.flagWelcome) els.flagWelcome.checked = detected.flag === "welcome";
+  if (els.flagChm01) els.flagChm01.checked = detected.flag === "chm01";
+  if (els.flagChf01) els.flagChf01.checked = detected.flag === "chf01";
+  if (detected.flag) parts.push(`flag: ${detected.flag}`);
 
   setCustomUrlInfo(
     parts.length > 0
@@ -901,6 +901,14 @@ async function loadState() {
         renderCards({ exp, envKey: els.env.value, variantCount: count });
       }
     }
+
+    // Auto-render multiple mode if all saved fields are valid
+    if (data.mode === "multiple" && els.grid.children.length === 0) {
+      validateMultipleExperiments();
+      if (lastGeneratedUrlMultiple) {
+        await handleMultipleExperiments();
+      }
+    }
   } catch (err) {
     console.error("Failed to restore popup state:", err);
     showError("Could not restore previous state. You can continue or press RESET.");
@@ -1008,7 +1016,7 @@ function renderSingleUrlCard(url) {
   goToPageBtn.className = "btn btn-secondary";
   goToPageBtn.textContent = "Go to page";
   goToPageBtn.addEventListener("click", () => {
-    window.open(url, "_blank");
+    chrome.windows.create({ url, incognito: true });
   });
 
   actions.appendChild(copyBtn);
@@ -1190,7 +1198,7 @@ els.urlInput?.addEventListener("input", validateUrlMode);
 // Go to page (URL mode)
 els.goToPageUrl?.addEventListener("click", () => {
   if (lastGeneratedUrlSingle) {
-    window.open(lastGeneratedUrlSingle, "_blank");
+    chrome.windows.create({ url: lastGeneratedUrlSingle, incognito: true });
   }
 });
 
