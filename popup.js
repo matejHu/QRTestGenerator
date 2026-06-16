@@ -26,11 +26,7 @@ const els = {
   customMasterUrlRow: document.getElementById("customMasterUrlRow"),
   alsoGenerateMasterRow: document.getElementById("alsoGenerateMasterRow"),
   localization: document.getElementById("localization"),
-  flagF01: document.getElementById("flagF01"),
-  flagM01: document.getElementById("flagM01"),
-  flagWelcome: document.getElementById("flagWelcome"),
-  flagChm01: document.getElementById("flagChm01"),
-  flagChf01: document.getElementById("flagChf01"),
+  flag: document.getElementById("flag"),
 
   // mode buttons
   modeExp: document.getElementById("modeExp"),
@@ -90,17 +86,14 @@ function updateAlternateBaseUrlRow() {
 }
 
 const KNOWN_LOCALES = new Set(["en", "cs", "nl", "fr", "de", "hu", "it", "ja", "ko", "pl", "pt", "ru", "sk", "es", "tr"]);
-const KNOWN_FLAGS = new Set(["f01", "m01", "welcome", "chm01", "chf01"]);
+const KNOWN_FLAGS = new Set(["f01", "m01", "welcome", "chm01", "chf01", "hopif"]);
 
 function buildPathSegments() {
   const segments = [];
   const locale = els.localization?.value;
   if (locale) segments.push(locale);
-  if (els.flagF01?.checked) segments.push("f01");
-  if (els.flagM01?.checked) segments.push("m01");
-  if (els.flagWelcome?.checked) segments.push("welcome");
-  if (els.flagChm01?.checked) segments.push("chm01");
-  if (els.flagChf01?.checked) segments.push("chf01");
+  const flag = els.flag?.value;
+  if (flag) segments.push(flag);
   return segments;
 }
 
@@ -166,11 +159,7 @@ function setCustomUrlInfo(message) {
 
 function setCustomUrlModesEnabled(enableLocale, enableFlag) {
   if (els.localization) els.localization.disabled = !enableLocale;
-  if (els.flagF01) els.flagF01.disabled = !enableFlag;
-  if (els.flagM01) els.flagM01.disabled = !enableFlag;
-  if (els.flagWelcome) els.flagWelcome.disabled = !enableFlag;
-  if (els.flagChm01) els.flagChm01.disabled = !enableFlag;
-  if (els.flagChf01) els.flagChf01.disabled = !enableFlag;
+  if (els.flag) els.flag.disabled = !enableFlag;
 }
 
 function updateCustomUrlState() {
@@ -195,13 +184,9 @@ function updateCustomUrlState() {
     parts.push(`locale: ${detected.locale}`);
   }
 
-  // Always sync flag checkboxes to what the URL declares — clears stale selection
+  // Always sync flag select to what the URL declares — clears stale selection
   // when user edits a custom URL to remove a flag that was previously detected.
-  if (els.flagF01) els.flagF01.checked = detected.flag === "f01";
-  if (els.flagM01) els.flagM01.checked = detected.flag === "m01";
-  if (els.flagWelcome) els.flagWelcome.checked = detected.flag === "welcome";
-  if (els.flagChm01) els.flagChm01.checked = detected.flag === "chm01";
-  if (els.flagChf01) els.flagChf01.checked = detected.flag === "chf01";
+  if (els.flag) els.flag.value = detected.flag || "";
   if (detected.flag) parts.push(`flag: ${detected.flag}`);
 
   setCustomUrlInfo(
@@ -821,11 +806,7 @@ async function loadState() {
       "customMasterEnv",
       "alsoGenerateMaster",
       "localization",
-      "flagF01",
-      "flagM01",
-      "flagWelcome",
-      "flagChm01",
-      "flagChf01",
+      "flag",
       "experimentFields",
     ]);
 
@@ -837,11 +818,7 @@ async function loadState() {
     if (els.customUrlRow) els.customUrlRow.hidden = els.env.value !== "custom";
     updateAlternateBaseUrlRow();
     if (els.localization && data.localization) els.localization.value = String(data.localization);
-    if (els.flagF01 && data.flagF01) els.flagF01.checked = Boolean(data.flagF01);
-    if (els.flagM01 && data.flagM01) els.flagM01.checked = Boolean(data.flagM01);
-    if (els.flagWelcome && data.flagWelcome) els.flagWelcome.checked = Boolean(data.flagWelcome);
-    if (els.flagChm01 && data.flagChm01) els.flagChm01.checked = Boolean(data.flagChm01);
-    if (els.flagChf01 && data.flagChf01) els.flagChf01.checked = Boolean(data.flagChf01);
+    if (els.flag && data.flag) els.flag.value = String(data.flag);
 
     const hasSavedVariantCount =
       data.variantCount !== undefined && data.variantCount !== null && String(data.variantCount).trim() !== "";
@@ -1092,54 +1069,8 @@ els.localization?.addEventListener("change", () => {
   chrome.storage.local.set({ localization: els.localization.value });
 });
 
-els.flagF01?.addEventListener("change", () => {
-  if (els.flagF01.checked) {
-    if (els.flagM01) els.flagM01.checked = false;
-    if (els.flagWelcome) els.flagWelcome.checked = false;
-    if (els.flagChm01) els.flagChm01.checked = false;
-    if (els.flagChf01) els.flagChf01.checked = false;
-  }
-  chrome.storage.local.set({ flagF01: els.flagF01.checked, flagM01: false, flagWelcome: false, flagChm01: false, flagChf01: false });
-});
-
-els.flagM01?.addEventListener("change", () => {
-  if (els.flagM01.checked) {
-    if (els.flagF01) els.flagF01.checked = false;
-    if (els.flagWelcome) els.flagWelcome.checked = false;
-    if (els.flagChm01) els.flagChm01.checked = false;
-    if (els.flagChf01) els.flagChf01.checked = false;
-  }
-  chrome.storage.local.set({ flagM01: els.flagM01.checked, flagF01: false, flagWelcome: false, flagChm01: false, flagChf01: false });
-});
-
-els.flagWelcome?.addEventListener("change", () => {
-  if (els.flagWelcome.checked) {
-    if (els.flagF01) els.flagF01.checked = false;
-    if (els.flagM01) els.flagM01.checked = false;
-    if (els.flagChm01) els.flagChm01.checked = false;
-    if (els.flagChf01) els.flagChf01.checked = false;
-  }
-  chrome.storage.local.set({ flagWelcome: els.flagWelcome.checked, flagF01: false, flagM01: false, flagChm01: false, flagChf01: false });
-});
-
-els.flagChm01?.addEventListener("change", () => {
-  if (els.flagChm01.checked) {
-    if (els.flagF01) els.flagF01.checked = false;
-    if (els.flagM01) els.flagM01.checked = false;
-    if (els.flagWelcome) els.flagWelcome.checked = false;
-    if (els.flagChf01) els.flagChf01.checked = false;
-  }
-  chrome.storage.local.set({ flagChm01: els.flagChm01.checked, flagF01: false, flagM01: false, flagWelcome: false, flagChf01: false });
-});
-
-els.flagChf01?.addEventListener("change", () => {
-  if (els.flagChf01.checked) {
-    if (els.flagF01) els.flagF01.checked = false;
-    if (els.flagM01) els.flagM01.checked = false;
-    if (els.flagWelcome) els.flagWelcome.checked = false;
-    if (els.flagChm01) els.flagChm01.checked = false;
-  }
-  chrome.storage.local.set({ flagChf01: els.flagChf01.checked, flagF01: false, flagM01: false, flagWelcome: false, flagChm01: false });
+els.flag?.addEventListener("change", () => {
+  chrome.storage.local.set({ flag: els.flag.value });
 });
 
 // Experiment generate
@@ -1214,11 +1145,7 @@ els.reset?.addEventListener("click", async () => {
     "alsoGenerateMaster",
     "mode",
     "localization",
-    "flagF01",
-    "flagM01",
-    "flagWelcome",
-    "flagChm01",
-    "flagChf01",
+    "flag",
     "experimentFields",
   ]);
   els.gbexp.value = "";
@@ -1232,11 +1159,7 @@ els.reset?.addEventListener("click", async () => {
   if (els.customMasterUrlRow) els.customMasterUrlRow.hidden = true;
   if (els.alsoGenerateMasterRow) els.alsoGenerateMasterRow.hidden = true;
   if (els.localization) els.localization.value = "";
-  if (els.flagF01) els.flagF01.checked = false;
-  if (els.flagM01) els.flagM01.checked = false;
-  if (els.flagWelcome) els.flagWelcome.checked = false;
-  if (els.flagChm01) els.flagChm01.checked = false;
-  if (els.flagChf01) els.flagChf01.checked = false;
+  if (els.flag) els.flag.value = "";
 
   experimentFields = [];
   els.experimentsContainer.innerHTML = "";

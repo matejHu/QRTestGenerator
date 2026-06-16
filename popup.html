@@ -81,29 +81,16 @@
     </div>
 
     <div style="margin-top: 8px; margin-bottom: 12px;">
-      <label class="label">Flags</label>
-      <div class="checkboxRow">
-        <label class="checkboxLabel">
-          <input type="checkbox" id="flagF01" />
-          /f01/
-        </label>
-        <label class="checkboxLabel">
-          <input type="checkbox" id="flagM01" />
-          /m01/
-        </label>
-        <label class="checkboxLabel">
-          <input type="checkbox" id="flagWelcome" />
-          /welcome/
-        </label>
-        <label class="checkboxLabel">
-          <input type="checkbox" id="flagChm01" />
-          /chm01/
-        </label>
-        <label class="checkboxLabel">
-          <input type="checkbox" id="flagChf01" />
-          /chf01/
-        </label>
-      </div>
+      <label class="label" for="flag">Flag</label>
+      <select id="flag" class="select">
+        <option value="">None</option>
+        <option value="f01">/f01/</option>
+        <option value="m01">/m01/</option>
+        <option value="welcome">/welcome/</option>
+        <option value="chm01">/chm01/</option>
+        <option value="chf01">/chf01/</option>
+        <option value="hopif">/hopif/</option>
+      </select>
     </div>
 
     <div id="expMode">
