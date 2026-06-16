@@ -20,6 +20,7 @@ const els = {
   genUrl: document.getElementById("genUrl"),
   customUrl: document.getElementById("customUrl"),
   customUrlRow: document.getElementById("customUrlRow"),
+  customUrlInfo: document.getElementById("customUrlInfo"),
   alsoGenerateMaster: document.getElementById("alsoGenerateMaster"),
   customMasterEnv: document.getElementById("customMasterEnv"),
   customMasterUrlRow: document.getElementById("customMasterUrlRow"),
@@ -379,7 +380,7 @@ function removeExperimentField(index) {
 
     experimentFields.forEach((f, i) => {
       f.dataset.index = i;
-      const label = f.querySelector("label");
+      const label = f.querySelector(".label");
       if (label) label.textContent = `Experiment ${i + 1}`;
     });
   }
@@ -669,8 +670,7 @@ function downloadDataUrl(dataUrl, filename) {
 
 function variantLabel(i) {
   if (i === 0) return "Control (0)";
-  if (i === 1) return "A (1)";
-  if (i === 2) return "B (2)";
+  if (i <= 26) return `${String.fromCharCode(64 + i)} (${i})`;
   return `Variant (${i})`;
 }
 
@@ -1053,8 +1053,6 @@ els.env?.addEventListener("change", () => {
   if (els.customUrlRow) els.customUrlRow.hidden = els.env.value !== "custom";
   updateBaseUrlLabel();
   validateMultipleExperiments();
-
-  updateBaseUrlLabel();
   chrome.storage.local.set({
     env: els.env.value,
     customUrl: els.customUrl?.value.trim() || "",
@@ -1211,6 +1209,8 @@ els.reset?.addEventListener("click", async () => {
     "flagF01",
     "flagM01",
     "flagWelcome",
+    "flagChm01",
+    "flagChf01",
     "experimentFields",
   ]);
   els.gbexp.value = "";
@@ -1227,6 +1227,8 @@ els.reset?.addEventListener("click", async () => {
   if (els.flagF01) els.flagF01.checked = false;
   if (els.flagM01) els.flagM01.checked = false;
   if (els.flagWelcome) els.flagWelcome.checked = false;
+  if (els.flagChm01) els.flagChm01.checked = false;
+  if (els.flagChf01) els.flagChf01.checked = false;
 
   experimentFields = [];
   els.experimentsContainer.innerHTML = "";
