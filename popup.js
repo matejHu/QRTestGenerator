@@ -184,10 +184,14 @@ function updateCustomUrlState() {
     parts.push(`locale: ${detected.locale}`);
   }
 
-  // Always sync flag select to what the URL declares — clears stale selection
-  // when user edits a custom URL to remove a flag that was previously detected.
-  if (els.flag) els.flag.value = detected.flag || "";
-  if (detected.flag) parts.push(`flag: ${detected.flag}`);
+  if (detected.flag) {
+    if (els.flag) els.flag.value = detected.flag;
+    parts.push(`flag: ${detected.flag}`);
+  } else if (els.flag?.disabled) {
+    // Flag was locked by URL detection but is no longer in the URL — clear it.
+    // Preserves manual user selection (which is never disabled).
+    els.flag.value = "";
+  }
 
   setCustomUrlInfo(
     parts.length > 0

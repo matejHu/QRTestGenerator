@@ -13,7 +13,7 @@ Chrome extension for QA/testing that generates QR codes for:
 
 - DEV / STAGING / CUSTOM environment switch (custom lets you enter any base URL)
 - **Localization**: optional locale path prefix added to the URL (e.g. `/en/`, `/cs/`)
-- **Flags**: optional path segment injected before query params — `/f01/`, `/m01/`, `/welcome/`, `/chm01/`, `/chf01/` (mutually exclusive — only one can be active at a time)
+- **Flag**: optional path segment injected before query params — `/f01/`, `/m01/`, `/welcome/`, `/chm01/`, `/chf01/`, `/hopif/` — selected via a dropdown (one at a time)
 - **Alternative branch QR**: when using a Custom environment (feature branch), optionally generate a second set of QR codes for Staging or Dev — place them side by side to reproduce a bug and verify the fix
 - Custom variant count (generates `gbvar=0..N-1`)
 - Download QR as PNG
@@ -82,7 +82,7 @@ Example:
    - For **Custom**: a base URL input appears — paste any URL (e.g. a branch preview)
    - If the URL is a feature branch, a **"Also generate QR for comparison environment"** checkbox appears — check it and pick Staging or Dev to generate both sets of QR codes side by side
 3. Optionally select a **Localization** locale
-4. Optionally check one **Flag** (`/f01/`, `/m01/`, `/welcome/`, `/chm01/`, `/chf01/`) — flags are mutually exclusive
+4. Optionally select a **Flag** from the dropdown (`/f01/`, `/m01/`, `/welcome/`, `/chm01/`, `/chf01/`, `/hopif/`)
 5. Enter the experiment id and variant count
 6. Click **Generate QR** — one QR card per variant is shown
 7. Each card has **Copy URL**, **Download QR**, and **Go to page** (opens incognito)
