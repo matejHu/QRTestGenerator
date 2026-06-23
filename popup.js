@@ -86,7 +86,7 @@ function updateAlternateBaseUrlRow() {
 }
 
 const KNOWN_LOCALES = new Set(["en", "cs", "nl", "fr", "de", "hu", "it", "ja", "ko", "pl", "pt", "ru", "sk", "es", "tr"]);
-const KNOWN_FLAGS = new Set(["f01", "m01", "welcome", "chm01", "chf01", "hopif"]);
+const KNOWN_FLAGS = new Set(["f01", "m01", "welcome", "chm01", "chf01", "hopif01"]);
 
 function buildPathSegments() {
   const segments = [];
