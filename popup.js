@@ -206,8 +206,10 @@ function buildUrl(baseUrl, gbexp, gbvar) {
   const u = new URL(normalizeBaseUrl(baseUrl));
   const segments = buildPathSegments();
   if (segments.length > 0) {
-    const base = u.pathname.endsWith("/") ? u.pathname : u.pathname + "/";
-    u.pathname = base + segments.join("/") + "/";
+    // Prepend segments to the path (not append)
+    let currentPath = u.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+    const newPath = '/' + segments.join('/') + (currentPath ? '/' + currentPath : '') + '/';
+    u.pathname = newPath;
   }
   u.searchParams.delete("gbvar");
   u.searchParams.set("gbexp", `${gbexp}:${gbvar}`);
@@ -218,8 +220,10 @@ function buildMultiExperimentUrl(baseUrl, experiments) {
   const u = new URL(normalizeBaseUrl(baseUrl));
   const segments = buildPathSegments();
   if (segments.length > 0) {
-    const base = u.pathname.endsWith("/") ? u.pathname : u.pathname + "/";
-    u.pathname = base + segments.join("/") + "/";
+    // Prepend segments to the path (not append)
+    let currentPath = u.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+    const newPath = '/' + segments.join('/') + (currentPath ? '/' + currentPath : '') + '/';
+    u.pathname = newPath;
   }
   u.searchParams.delete("gbexp");
   u.searchParams.delete("gbvar");
